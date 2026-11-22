@@ -21,7 +21,7 @@ is_dialog_open :: proc(app: App) -> bool {
 	return app.picker.is_open || app.prompt.is_open
 }
 
-update_file_dialogs :: proc(app: ^App) -> (consumed: bool) {
+update_file_dialogs :: proc(app: ^App) -> bool {
 	if app.prompt.is_open {
 		handle_prompt_choice(app, app.prompt.kind, update_prompt(&app.prompt))
 		return true
@@ -39,9 +39,15 @@ update_file_dialogs :: proc(app: ^App) -> (consumed: bool) {
 		return true
 	}
 
-	action := file_action_from_shortcuts()
+	if action := file_action_from_shortcuts(); action != .None {
+		app.menu.is_open = false
+		run_file_action(app, action)
+		return true
+	}
+
+	action, consumed := update_menu(&app.menu)
 	run_file_action(app, action)
-	return action != .None
+	return consumed
 }
 
 file_action_from_shortcuts :: proc() -> File_Action {

@@ -27,6 +27,7 @@ App :: struct {
 	overwrite_path: string,
 	dropped_path:   string,
 	pending_action: File_Action,
+	menu:           Menu,
 }
 
 main :: proc() {
@@ -155,6 +156,7 @@ draw_app :: proc(app: App) {
 	rl.EndMode2D()
 
 	draw_toolbar(app.tool)
+	draw_menu(app.menu)
 	draw_status(app.status)
 	draw_file_picker(app.picker)
 	draw_prompt(app.prompt)
