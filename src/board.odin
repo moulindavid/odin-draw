@@ -1,5 +1,6 @@
 package main
 
+import "core:slice"
 import "core:strings"
 import rl "vendor:raylib"
 
@@ -106,6 +107,75 @@ move_element :: proc(board: ^Board, index: int, offset: rl.Vector2) {
 	case Text:
 		shape.position += offset
 	}
+}
+
+clone_element :: proc(element: Element) -> Element {
+	clone := element
+	switch shape in element.shape {
+	case Freehand:
+		clone.shape = Freehand{slice.clone_to_dynamic(shape.points[:])}
+	case Text:
+		text := shape
+		text.content = strings.clone(shape.content)
+		clone.shape = text
+	case Rectangle, Ellipse, Line, Arrow:
+	}
+	return clone
+}
+
+clone_elements :: proc(elements: []Element) -> []Element {
+	copies := make([]Element, len(elements))
+	for element, index in elements {
+		copies[index] = clone_element(element)
+	}
+	return copies
+}
+
+elements_equal :: proc(a, b: []Element) -> bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for index in 0 ..< len(a) {
+		if !element_equal(a[index], b[index]) {
+			return false
+		}
+	}
+	return true
+}
+
+element_equal :: proc(a, b: Element) -> bool {
+	return a.color == b.color && a.stroke_width == b.stroke_width && shapes_equal(a.shape, b.shape)
+}
+
+shapes_equal :: proc(a, b: Shape) -> bool {
+	switch shape in a {
+	case Freehand:
+		other, same_kind := b.(Freehand)
+		return same_kind && slice.equal(shape.points[:], other.points[:])
+	case Rectangle:
+		other, same_kind := b.(Rectangle)
+		return same_kind && shape == other
+	case Ellipse:
+		other, same_kind := b.(Ellipse)
+		return same_kind && shape == other
+	case Line:
+		other, same_kind := b.(Line)
+		return same_kind && shape == other
+	case Arrow:
+		other, same_kind := b.(Arrow)
+		return same_kind && shape == other
+	case Text:
+		other, same_kind := b.(Text)
+		return same_kind && shape.position == other.position && shape.content == other.content && shape.font_size == other.font_size
+	}
+	return b == nil
+}
+
+destroy_elements :: proc(elements: []Element) {
+	for &element in elements {
+		destroy_element(&element)
+	}
+	delete(elements)
 }
 
 destroy_element :: proc(element: ^Element) {
