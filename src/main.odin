@@ -9,6 +9,7 @@ INITIAL_HEIGHT :: 800
 TARGET_FPS :: 60
 BACKGROUND_COLOR :: rl.Color{250, 250, 250, 255}
 ACCENT_COLOR :: rl.Color{120, 110, 255, 255}
+LOGO_PNG :: #load("../assets/logo.png")
 
 App :: struct {
 	camera:         rl.Camera2D,
@@ -34,6 +35,7 @@ main :: proc() {
 	rl.SetConfigFlags({.WINDOW_RESIZABLE, .MSAA_4X_HINT, .VSYNC_HINT})
 	rl.InitWindow(INITIAL_WIDTH, INITIAL_HEIGHT, WINDOW_TITLE)
 	defer rl.CloseWindow()
+	set_window_icon()
 
 	rl.SetTargetFPS(TARGET_FPS)
 	rl.SetExitKey(.KEY_NULL)
@@ -160,4 +162,11 @@ draw_app :: proc(app: App) {
 	draw_status(app.status)
 	draw_file_picker(app.picker)
 	draw_prompt(app.prompt)
+}
+
+set_window_icon :: proc() {
+	icon := rl.LoadImageFromMemory(".png", raw_data(LOGO_PNG), i32(len(LOGO_PNG)))
+	defer rl.UnloadImage(icon)
+	rl.ImageFormat(&icon, .UNCOMPRESSED_R8G8B8A8)
+	rl.SetWindowIcon(icon)
 }
