@@ -6,34 +6,63 @@ SELECTION_HIT_SCREEN_TOLERANCE :: 6.0
 SELECTION_SCREEN_PADDING :: 6.0
 SELECTION_BORDER_SCREEN_WIDTH :: 1.0
 DOUBLE_CLICK_SECONDS :: 0.4
+DRAG_START_SCREEN_DISTANCE :: 4.0
 
 Selection :: struct {
 	index:           Maybe(int),
 	is_dragging:     bool,
+	has_moved:       bool,
+	press_position:  rl.Vector2,
+	drag_position:   rl.Vector2,
 	last_click_time: f64,
 }
 
 update_select_tool :: proc(selection: ^Selection, editor: ^Text_Editor, board: ^Board, camera: rl.Camera2D) {
-	if is_pan_mode_active() || !rl.IsMouseButtonDown(.LEFT) {
-		selection.is_dragging = false
-	}
-
 	if is_pan_mode_active() {
+		selection.is_dragging = false
 		return
 	}
 
+	cursor := rl.GetScreenToWorld2D(rl.GetMousePosition(), camera)
+
 	if rl.IsMouseButtonPressed(.LEFT) {
-		cursor := rl.GetScreenToWorld2D(rl.GetMousePosition(), camera)
-		previous_selection := selection.index
-		select_element_at(selection, board^, cursor, SELECTION_HIT_SCREEN_TOLERANCE / camera.zoom)
-		if is_double_click(selection, previous_selection) && open_selected_text(selection, editor, board) {
+		press_selection(selection, editor, board, cursor, camera.zoom)
+	} else if selection.is_dragging && rl.IsMouseButtonDown(.LEFT) {
+		drag_selection(selection, board, cursor, camera.zoom)
+	} else {
+		selection.is_dragging = false
+	}
+}
+
+press_selection :: proc(selection: ^Selection, editor: ^Text_Editor, board: ^Board, cursor: rl.Vector2, zoom: f32) {
+	previous_selection := selection.index
+	select_element_at(selection, board^, cursor, SELECTION_HIT_SCREEN_TOLERANCE / zoom)
+	if is_double_click(selection, previous_selection) && open_selected_text(selection, editor, board) {
+		return
+	}
+
+	_, has_selection := selection.index.?
+	selection.is_dragging = has_selection
+	selection.has_moved = false
+	selection.press_position = cursor
+	selection.drag_position = cursor
+}
+
+drag_selection :: proc(selection: ^Selection, board: ^Board, cursor: rl.Vector2, zoom: f32) {
+	index, has_selection := selection.index.?
+	if !has_selection {
+		return
+	}
+
+	if !selection.has_moved {
+		if rl.Vector2Distance(cursor, selection.press_position) * zoom < DRAG_START_SCREEN_DISTANCE {
 			return
 		}
-		_, has_selection := selection.index.?
-		selection.is_dragging = has_selection
-	} else if selection.is_dragging {
-		drag_selected_element(selection^, board, camera.zoom)
+		selection.has_moved = true
 	}
+
+	move_element(board, index, cursor - selection.drag_position)
+	selection.drag_position = cursor
 }
 
 is_double_click :: proc(selection: ^Selection, previous_selection: Maybe(int)) -> bool {
@@ -81,12 +110,6 @@ select_element_at :: proc(selection: ^Selection, board: Board, point: rl.Vector2
 		selection.index = index
 	} else {
 		selection.index = nil
-	}
-}
-
-drag_selected_element :: proc(selection: Selection, board: ^Board, zoom: f32) {
-	if index, has_selection := selection.index.?; has_selection {
-		move_element(board, index, rl.GetMouseDelta() / zoom)
 	}
 }
 
