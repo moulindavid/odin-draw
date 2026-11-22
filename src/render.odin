@@ -4,6 +4,8 @@ import "core:math"
 import rl "vendor:raylib"
 
 ELLIPSE_SEGMENTS :: 64
+ARROW_HEAD_LENGTH :: 16.0
+ARROW_HEAD_ANGLE :: 25 * math.RAD_PER_DEG
 
 draw_board :: proc(board: Board) {
 	for element in board.elements {
@@ -21,7 +23,19 @@ draw_element :: proc(element: Element) {
 		draw_ellipse_outline(shape.start, shape.end, element.stroke_width, element.color)
 	case Line:
 		draw_polyline([]rl.Vector2{shape.start, shape.end}, element.stroke_width, element.color)
+	case Arrow:
+		draw_arrow(shape.start, shape.end, element.stroke_width, element.color)
 	}
+}
+
+draw_arrow :: proc(start, end: rl.Vector2, width: f32, color: rl.Color) {
+	draw_polyline([]rl.Vector2{start, end}, width, color)
+
+	back_direction := rl.Vector2Normalize(start - end)
+	head_length := min(ARROW_HEAD_LENGTH, rl.Vector2Distance(start, end) / 2)
+	left_tip := end + rl.Vector2Rotate(back_direction, ARROW_HEAD_ANGLE) * head_length
+	right_tip := end + rl.Vector2Rotate(back_direction, -ARROW_HEAD_ANGLE) * head_length
+	draw_polyline([]rl.Vector2{left_tip, end, right_tip}, width, color)
 }
 
 draw_ellipse_outline :: proc(corner_a, corner_b: rl.Vector2, width: f32, color: rl.Color) {
