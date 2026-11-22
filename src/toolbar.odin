@@ -82,7 +82,8 @@ draw_tool_icon :: proc(tool: Tool, button: rl.Rectangle) {
 	case .Rectangle:
 		rl.DrawRectangleLinesEx(rectangle_from_corners(top_left, bottom_right), TOOLBAR_ICON_STROKE, TOOLBAR_ICON_COLOR)
 	case .Ellipse:
-		draw_ellipse_outline(top_left, bottom_right, TOOLBAR_ICON_STROKE, TOOLBAR_ICON_COLOR)
+		points := ellipse_points(top_left, bottom_right)
+		draw_polyline(points[:], TOOLBAR_ICON_STROKE, TOOLBAR_ICON_COLOR)
 	case .Arrow:
 		draw_arrow(bottom_left, top_right, TOOLBAR_ICON_STROKE, TOOLBAR_ICON_COLOR)
 	case .Line:
