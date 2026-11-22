@@ -1,6 +1,7 @@
 package main
 
 import "core:os"
+import "core:strings"
 import rl "vendor:raylib"
 
 WINDOW_TITLE :: "excalidraw-local"
@@ -34,12 +35,13 @@ main :: proc() {
 	app := App {
 		camera    = make_camera(),
 		tool      = .Select,
-		file_path = file_path_from_arguments(),
+		file_path = strings.clone(file_path_from_arguments()),
 	}
 	defer destroy_board(&app.board)
 	defer destroy_text_editor(&app.editor)
 	defer destroy_history(&app.history)
 	defer destroy_status(&app.status)
+	defer delete(app.file_path)
 	open_initial_file(&app)
 	init_history(&app.history, app.board)
 
@@ -65,11 +67,36 @@ open_initial_file :: proc(app: ^App) {
 	}
 }
 
+open_dropped_file :: proc(app: ^App) {
+	if !rl.IsFileDropped() {
+		return
+	}
+	dropped := rl.LoadDroppedFiles()
+	defer rl.UnloadDroppedFiles(dropped)
+
+	if dropped.count > 0 {
+		open_file(app, string(dropped.paths[0]))
+	}
+}
+
+open_file :: proc(app: ^App, path: string) {
+	if !load_board(&app.board, path) {
+		show_status(&app.status, "Could not open %s", path)
+		return
+	}
+	delete(app.file_path)
+	app.file_path = strings.clone(path)
+	app.selection = {}
+	reset_history(&app.history, app.board)
+	show_status(&app.status, "Opened %s", app.file_path)
+}
+
 update_app :: proc(app: ^App) {
 	update_input(app)
 	if !is_interacting(app^) {
 		record_change(&app.history, app.board)
 		update_file_keys(app)
+		open_dropped_file(app)
 	}
 }
 
