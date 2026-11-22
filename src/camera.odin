@@ -1,9 +1,30 @@
 package main
 
+import "core:math"
 import rl "vendor:raylib"
+
+MIN_ZOOM :: 0.1
+MAX_ZOOM :: 10.0
+ZOOM_SPEED :: 0.15
 
 make_camera :: proc() -> rl.Camera2D {
 	return rl.Camera2D{zoom = 1}
+}
+
+update_camera :: proc(camera: ^rl.Camera2D) {
+	zoom_toward_cursor(camera)
+}
+
+zoom_toward_cursor :: proc(camera: ^rl.Camera2D) {
+	wheel := rl.GetMouseWheelMove()
+	if wheel == 0 {
+		return
+	}
+
+	cursor := rl.GetMousePosition()
+	camera.target = rl.GetScreenToWorld2D(cursor, camera^)
+	camera.offset = cursor
+	camera.zoom = clamp(camera.zoom * math.exp(wheel * ZOOM_SPEED), MIN_ZOOM, MAX_ZOOM)
 }
 
 visible_world_bounds :: proc(camera: rl.Camera2D) -> (top_left, bottom_right: rl.Vector2) {

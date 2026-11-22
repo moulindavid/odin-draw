@@ -19,6 +19,8 @@ main :: proc() {
 	camera := make_camera()
 
 	for !rl.WindowShouldClose() {
+		update_camera(&camera)
+
 		rl.BeginDrawing()
 		rl.ClearBackground(BACKGROUND_COLOR)
 
