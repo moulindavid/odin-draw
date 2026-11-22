@@ -13,6 +13,7 @@ App :: struct {
 	board:  Board,
 	tool:   Tool,
 	draft:  Draft,
+	editor: Text_Editor,
 }
 
 main :: proc() {
@@ -28,6 +29,7 @@ main :: proc() {
 		tool   = .Freehand,
 	}
 	defer destroy_board(&app.board)
+	defer destroy_text_editor(&app.editor)
 
 	for !rl.WindowShouldClose() {
 		update_app(&app)
@@ -37,11 +39,24 @@ main :: proc() {
 }
 
 update_app :: proc(app: ^App) {
-	update_camera(&app.camera)
+	is_typing := app.editor.is_active
+	update_camera(&app.camera, space_pans = !is_typing)
+
+	if is_typing {
+		update_text_editor(&app.editor, &app.board, app.camera)
+		return
+	}
+
 	app.tool = tool_from_shortcuts(app.tool)
 	app.tool = tool_from_toolbar_click(app.tool)
 
-	if app.draft.is_active || !is_over_toolbar(rl.GetMousePosition()) {
+	if !app.draft.is_active && is_over_toolbar(rl.GetMousePosition()) {
+		return
+	}
+
+	if app.tool == .Text && !app.draft.is_active {
+		update_text_tool(&app.editor, app.camera)
+	} else {
 		update_drawing(app.tool, &app.draft, &app.board, app.camera)
 	}
 }
@@ -56,6 +71,7 @@ draw_app :: proc(app: App) {
 	draw_dot_grid(app.camera)
 	draw_board(app.board)
 	draw_draft(app.draft)
+	draw_text_editor(app.editor, app.camera.zoom)
 	rl.EndMode2D()
 
 	draw_toolbar(app.tool)

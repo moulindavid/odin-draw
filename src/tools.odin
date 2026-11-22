@@ -10,6 +10,7 @@ Tool :: enum {
 	Arrow,
 	Line,
 	Freehand,
+	Text,
 }
 
 @(rodata)
@@ -19,6 +20,7 @@ TOOL_SHORTCUTS := [Tool][2]rl.KeyboardKey {
 	.Arrow     = {.A, .FOUR},
 	.Line      = {.L, .FIVE},
 	.Freehand  = {.P, .SIX},
+	.Text      = {.T, .SEVEN},
 }
 
 tool_from_shortcuts :: proc(current: Tool) -> Tool {
@@ -80,6 +82,7 @@ new_shape :: proc(tool: Tool, start: rl.Vector2) -> Shape {
 		shape = Line{start, start}
 	case .Arrow:
 		shape = Arrow{start, start}
+	case .Text:
 	}
 	return shape
 }
