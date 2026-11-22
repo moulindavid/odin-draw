@@ -16,10 +16,15 @@ File_Action :: enum {
 }
 
 is_dialog_open :: proc(app: App) -> bool {
-	return app.picker.is_open
+	return app.picker.is_open || app.prompt.is_open
 }
 
 update_file_dialogs :: proc(app: ^App) -> (consumed: bool) {
+	if app.prompt.is_open {
+		handle_prompt_choice(app, update_prompt(&app.prompt))
+		return true
+	}
+
 	if app.picker.is_open {
 		result, path := update_file_picker(&app.picker)
 		if result == .Confirmed {
@@ -75,12 +80,32 @@ choose_save_file :: proc(app: ^App) {
 }
 
 handle_picked_path :: proc(app: ^App, path: string) {
-	close_file_picker(&app.picker)
 	switch app.picker.mode {
 	case .Open:
+		close_file_picker(&app.picker)
 		open_file(app, path)
 	case .Save:
+		if os.exists(path) && path != app.file_path {
+			ask_to_overwrite(app, path)
+			return
+		}
+		close_file_picker(&app.picker)
 		save_to_path(app, path)
+	}
+}
+
+ask_to_overwrite :: proc(app: ^App, path: string) {
+	delete(app.overwrite_path)
+	app.overwrite_path = strings.clone(path)
+	open_prompt(&app.prompt, .Overwrite)
+}
+
+handle_prompt_choice :: proc(app: ^App, choice: Prompt_Choice) {
+	switch choice {
+	case .None, .Cancel:
+	case .Replace:
+		close_file_picker(&app.picker)
+		save_to_path(app, app.overwrite_path)
 	}
 }
 

@@ -23,6 +23,8 @@ App :: struct {
 	window_title:   string,
 	status:         Status,
 	picker:         File_Picker,
+	prompt:         Prompt,
+	overwrite_path: string,
 }
 
 main :: proc() {
@@ -45,6 +47,7 @@ main :: proc() {
 	defer delete(app.file_path)
 	defer delete(app.window_title)
 	defer destroy_file_picker(&app.picker)
+	defer delete(app.overwrite_path)
 	open_initial_file(&app)
 	init_history(&app.history, app.board)
 	app.saved_revision = app.board.revision
@@ -142,4 +145,5 @@ draw_app :: proc(app: App) {
 	draw_toolbar(app.tool)
 	draw_status(app.status)
 	draw_file_picker(app.picker)
+	draw_prompt(app.prompt)
 }
