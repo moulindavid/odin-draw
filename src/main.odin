@@ -25,7 +25,10 @@ main :: proc() {
 	for !rl.WindowShouldClose() {
 		update_camera(&camera)
 		tool = tool_from_shortcuts(tool)
-		update_drawing(tool, &draft, &board, camera)
+		tool = tool_from_toolbar_click(tool)
+		if draft.is_active || !is_over_toolbar(rl.GetMousePosition()) {
+			update_drawing(tool, &draft, &board, camera)
+		}
 
 		rl.BeginDrawing()
 		rl.ClearBackground(BACKGROUND_COLOR)

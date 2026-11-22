@@ -40,6 +40,23 @@ tool_button_bounds :: proc(tool: Tool) -> rl.Rectangle {
 	}
 }
 
+is_over_toolbar :: proc(screen_point: rl.Vector2) -> bool {
+	return rl.CheckCollisionPointRec(screen_point, toolbar_bounds())
+}
+
+tool_from_toolbar_click :: proc(current: Tool) -> Tool {
+	if !rl.IsMouseButtonPressed(.LEFT) {
+		return current
+	}
+	cursor := rl.GetMousePosition()
+	for tool in Tool {
+		if rl.CheckCollisionPointRec(cursor, tool_button_bounds(tool)) {
+			return tool
+		}
+	}
+	return current
+}
+
 draw_toolbar :: proc(active_tool: Tool) {
 	toolbar := toolbar_bounds()
 	rl.DrawRectangleRounded(toolbar, TOOLBAR_ROUNDNESS, TOOLBAR_CORNER_SEGMENTS, TOOLBAR_BACKGROUND)
