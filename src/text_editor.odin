@@ -5,7 +5,6 @@ import rl "vendor:raylib"
 
 TEXT_EDITOR_PADDING :: 4.0
 TEXT_EDITOR_MIN_WIDTH :: 20.0
-TEXT_EDITOR_BORDER_COLOR :: rl.Color{120, 110, 255, 255}
 TEXT_EDITOR_BORDER_SCREEN_WIDTH :: 1.0
 TEXT_CARET_SCREEN_WIDTH :: 1.5
 TEXT_CARET_BLINK_SECONDS :: 0.5
@@ -117,7 +116,7 @@ draw_text_editor :: proc(editor: Text_Editor, zoom: f32) {
 	}
 
 	content := strings.to_string(editor.buffer)
-	rl.DrawRectangleLinesEx(text_editor_bounds(editor), TEXT_EDITOR_BORDER_SCREEN_WIDTH / zoom, TEXT_EDITOR_BORDER_COLOR)
+	rl.DrawRectangleLinesEx(text_editor_bounds(editor), TEXT_EDITOR_BORDER_SCREEN_WIDTH / zoom, ACCENT_COLOR)
 	draw_text_block(content, editor.position, TEXT_FONT_SIZE, editor.color)
 
 	if is_caret_visible() {
