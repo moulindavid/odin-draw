@@ -36,6 +36,9 @@ main :: proc() {
 		draw_draft(draft)
 		rl.EndMode2D()
 
+		draw_toolbar(tool)
+
 		rl.EndDrawing()
+		free_all(context.temp_allocator)
 	}
 }

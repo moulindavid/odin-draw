@@ -12,7 +12,8 @@ Tool :: enum {
 	Freehand,
 }
 
-TOOL_SHORTCUTS :: [Tool][2]rl.KeyboardKey {
+@(rodata)
+TOOL_SHORTCUTS := [Tool][2]rl.KeyboardKey {
 	.Rectangle = {.R, .TWO},
 	.Ellipse   = {.O, .THREE},
 	.Arrow     = {.A, .FOUR},
