@@ -37,29 +37,38 @@ main :: proc() {
 	rl.SetTargetFPS(TARGET_FPS)
 	rl.SetExitKey(.KEY_NULL)
 
-	app := App {
-		camera    = make_camera(),
-		tool      = .Select,
-		file_path = file_path_from_arguments(),
-	}
-	defer destroy_board(&app.board)
-	defer destroy_text_editor(&app.editor)
-	defer destroy_history(&app.history)
-	defer destroy_status(&app.status)
-	defer delete(app.file_path)
-	defer delete(app.window_title)
-	defer destroy_file_picker(&app.picker)
-	defer delete(app.overwrite_path)
-	defer delete(app.dropped_path)
-	open_initial_file(&app)
-	init_history(&app.history, app.board)
-	app.saved_revision = app.board.revision
+	app := make_app(file_path_from_arguments())
+	defer destroy_app(&app)
 
 	for !rl.WindowShouldClose() {
 		update_app(&app)
 		draw_app(app)
 		free_all(context.temp_allocator)
 	}
+}
+
+make_app :: proc(file_path: string) -> App {
+	app := App {
+		camera    = make_camera(),
+		tool      = .Select,
+		file_path = file_path,
+	}
+	open_initial_file(&app)
+	init_history(&app.history, app.board)
+	app.saved_revision = app.board.revision
+	return app
+}
+
+destroy_app :: proc(app: ^App) {
+	destroy_board(&app.board)
+	destroy_text_editor(&app.editor)
+	destroy_history(&app.history)
+	destroy_status(&app.status)
+	destroy_file_picker(&app.picker)
+	delete(app.file_path)
+	delete(app.window_title)
+	delete(app.overwrite_path)
+	delete(app.dropped_path)
 }
 
 file_path_from_arguments :: proc() -> string {
