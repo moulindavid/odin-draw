@@ -1,7 +1,6 @@
 package main
 
 import "core:os"
-import "core:strings"
 import rl "vendor:raylib"
 
 WINDOW_TITLE :: "excalidraw-local"
@@ -10,7 +9,6 @@ INITIAL_HEIGHT :: 800
 TARGET_FPS :: 60
 BACKGROUND_COLOR :: rl.Color{250, 250, 250, 255}
 ACCENT_COLOR :: rl.Color{120, 110, 255, 255}
-DEFAULT_FILE_PATH :: "untitled.json"
 
 App :: struct {
 	camera:         rl.Camera2D,
@@ -24,6 +22,7 @@ App :: struct {
 	saved_revision: int,
 	window_title:   string,
 	status:         Status,
+	picker:         File_Picker,
 }
 
 main :: proc() {
@@ -37,7 +36,7 @@ main :: proc() {
 	app := App {
 		camera    = make_camera(),
 		tool      = .Select,
-		file_path = strings.clone(file_path_from_arguments()),
+		file_path = file_path_from_arguments(),
 	}
 	defer destroy_board(&app.board)
 	defer destroy_text_editor(&app.editor)
@@ -45,6 +44,7 @@ main :: proc() {
 	defer destroy_status(&app.status)
 	defer delete(app.file_path)
 	defer delete(app.window_title)
+	defer destroy_file_picker(&app.picker)
 	open_initial_file(&app)
 	init_history(&app.history, app.board)
 	app.saved_revision = app.board.revision
@@ -57,14 +57,13 @@ main :: proc() {
 }
 
 file_path_from_arguments :: proc() -> string {
-	return os.args[1] if len(os.args) > 1 else DEFAULT_FILE_PATH
+	return absolute_path(os.args[1]) if len(os.args) > 1 else ""
 }
 
 update_app :: proc(app: ^App) {
 	update_input(app)
 	if !is_interacting(app^) {
 		record_change(&app.history, app.board)
-		update_file_keys(app)
 		open_dropped_file(app)
 	}
 	update_window_title(app)
@@ -76,13 +75,20 @@ is_interacting :: proc(app: App) -> bool {
 
 update_input :: proc(app: ^App) {
 	is_typing := app.editor.is_active
-	update_camera(&app.camera, space_pans = !is_typing)
+	if !is_dialog_open(app^) {
+		update_camera(&app.camera, space_pans = !is_typing)
+	}
 
 	if is_typing {
 		update_text_editor(&app.editor, &app.board, app.camera)
 		if rl.IsKeyPressed(.ESCAPE) {
 			app.tool = .Select
 		}
+		return
+	}
+
+	is_busy := app.draft.is_active || app.selection.is_dragging
+	if !is_busy && update_file_dialogs(app) {
 		return
 	}
 
@@ -135,4 +141,5 @@ draw_app :: proc(app: App) {
 
 	draw_toolbar(app.tool)
 	draw_status(app.status)
+	draw_file_picker(app.picker)
 }
