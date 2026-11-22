@@ -1,5 +1,7 @@
 package main
 
+import rl "vendor:raylib"
+
 HISTORY_LIMIT :: 100
 
 History :: struct {
@@ -44,4 +46,44 @@ destroy_history :: proc(history: ^History) {
 		destroy_elements(state)
 	}
 	delete(history.states)
+}
+
+update_history_keys :: proc(history: ^History, board: ^Board) -> bool {
+	pressed_history_key := rl.IsKeyPressed(.Z) || rl.IsKeyPressed(.Y)
+	if !is_control_down() || !pressed_history_key {
+		return false
+	}
+	wants_redo := rl.IsKeyPressed(.Y) || is_shift_down()
+	return redo(history, board) if wants_redo else undo(history, board)
+}
+
+is_control_down :: proc() -> bool {
+	return rl.IsKeyDown(.LEFT_CONTROL) || rl.IsKeyDown(.RIGHT_CONTROL)
+}
+
+is_shift_down :: proc() -> bool {
+	return rl.IsKeyDown(.LEFT_SHIFT) || rl.IsKeyDown(.RIGHT_SHIFT)
+}
+
+undo :: proc(history: ^History, board: ^Board) -> bool {
+	if history.current == 0 {
+		return false
+	}
+	history.current -= 1
+	restore_current_state(history, board)
+	return true
+}
+
+redo :: proc(history: ^History, board: ^Board) -> bool {
+	if history.current == len(history.states) - 1 {
+		return false
+	}
+	history.current += 1
+	restore_current_state(history, board)
+	return true
+}
+
+restore_current_state :: proc(history: ^History, board: ^Board) {
+	replace_elements(board, history.states[history.current])
+	history.recorded_revision = board.revision
 }

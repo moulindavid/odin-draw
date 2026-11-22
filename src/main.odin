@@ -75,6 +75,11 @@ update_input :: proc(app: ^App) {
 		return
 	}
 
+	if !app.selection.is_dragging && update_history_keys(&app.history, &app.board) {
+		app.selection = {}
+		return
+	}
+
 	update_selection_keys(&app.selection, &app.board)
 
 	if !app.selection.is_dragging && is_over_toolbar(rl.GetMousePosition()) {

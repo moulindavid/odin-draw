@@ -206,6 +206,17 @@ is_empty_shape :: proc(shape: Shape) -> bool {
 	return true
 }
 
+replace_elements :: proc(board: ^Board, elements: []Element) {
+	for &element in board.elements {
+		destroy_element(&element)
+	}
+	clear(&board.elements)
+	for element in elements {
+		append(&board.elements, clone_element(element))
+	}
+	board.revision += 1
+}
+
 destroy_board :: proc(board: ^Board) {
 	for &element in board.elements {
 		destroy_element(&element)
