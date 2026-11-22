@@ -54,24 +54,10 @@ update_text_editor :: proc(editor: ^Text_Editor, board: ^Board, camera: rl.Camer
 		return
 	}
 
-	type_characters(editor)
-
-	if is_key_typed(.ENTER) || is_key_typed(.KP_ENTER) {
+	type_into(&editor.buffer)
+	if is_enter_typed() {
 		strings.write_byte(&editor.buffer, '\n')
 	}
-	if is_key_typed(.BACKSPACE) && strings.builder_len(editor.buffer) > 0 {
-		strings.pop_rune(&editor.buffer)
-	}
-}
-
-type_characters :: proc(editor: ^Text_Editor) {
-	for character := rl.GetCharPressed(); character != 0; character = rl.GetCharPressed() {
-		strings.write_rune(&editor.buffer, character)
-	}
-}
-
-is_key_typed :: proc(key: rl.KeyboardKey) -> bool {
-	return rl.IsKeyPressed(key) || rl.IsKeyPressedRepeat(key)
 }
 
 is_click_outside_editor :: proc(editor: Text_Editor, camera: rl.Camera2D) -> bool {

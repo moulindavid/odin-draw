@@ -9,7 +9,7 @@ A local whiteboard for drawing and writing, built with Odin and raylib.
 ./build/excalidraw-local [board.json]
 ```
 
-Without a file argument the board is saved to `untitled.json`. Drop a `.json` file on the window to open it.
+Open the menu left of the toolbar to create, open or save boards. Drop a `.json` file on the window to open it.
 
 ## Shortcuts
 
@@ -22,7 +22,11 @@ Without a file argument the board is saved to `untitled.json`. Drop a `.json` fi
 | `L` `5` | Line |
 | `P` `6` | Freehand |
 | `T` `7` | Text |
+| `Esc` | Back to select |
+| `Ctrl+N` | New board |
+| `Ctrl+O` | Open |
 | `Ctrl+S` | Save |
+| `Ctrl+Shift+S` | Save as |
 | `Ctrl+Z` / `Ctrl+Shift+Z` | Undo / Redo |
 | `Delete` | Delete selection |
 | Wheel | Zoom |
