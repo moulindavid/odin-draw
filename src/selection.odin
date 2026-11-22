@@ -7,10 +7,15 @@ SELECTION_SCREEN_PADDING :: 6.0
 SELECTION_BORDER_SCREEN_WIDTH :: 1.0
 
 Selection :: struct {
-	index: Maybe(int),
+	index:       Maybe(int),
+	is_dragging: bool,
 }
 
 update_select_tool :: proc(selection: ^Selection, board: ^Board, camera: rl.Camera2D) {
+	if is_pan_mode_active() || !rl.IsMouseButtonDown(.LEFT) {
+		selection.is_dragging = false
+	}
+
 	if is_pan_mode_active() {
 		return
 	}
@@ -18,6 +23,10 @@ update_select_tool :: proc(selection: ^Selection, board: ^Board, camera: rl.Came
 	if rl.IsMouseButtonPressed(.LEFT) {
 		cursor := rl.GetScreenToWorld2D(rl.GetMousePosition(), camera)
 		select_element_at(selection, board^, cursor, SELECTION_HIT_SCREEN_TOLERANCE / camera.zoom)
+		_, has_selection := selection.index.?
+		selection.is_dragging = has_selection
+	} else if selection.is_dragging {
+		drag_selected_element(selection^, board, camera.zoom)
 	}
 
 	if rl.IsKeyPressed(.ESCAPE) {
@@ -30,6 +39,12 @@ select_element_at :: proc(selection: ^Selection, board: Board, point: rl.Vector2
 		selection.index = index
 	} else {
 		selection.index = nil
+	}
+}
+
+drag_selected_element :: proc(selection: Selection, board: ^Board, zoom: f32) {
+	if index, has_selection := selection.index.?; has_selection {
+		move_element(&board.elements[index], rl.GetMouseDelta() / zoom)
 	}
 }
 
