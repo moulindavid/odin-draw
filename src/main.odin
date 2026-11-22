@@ -19,11 +19,13 @@ main :: proc() {
 	camera := make_camera()
 	board: Board
 	defer destroy_board(&board)
-	freehand_tool: Freehand_Tool
+	tool := Tool.Freehand
+	draft: Draft
 
 	for !rl.WindowShouldClose() {
 		update_camera(&camera)
-		update_freehand_tool(&freehand_tool, &board, camera)
+		tool = tool_from_shortcuts(tool)
+		update_drawing(tool, &draft, &board, camera)
 
 		rl.BeginDrawing()
 		rl.ClearBackground(BACKGROUND_COLOR)
@@ -31,7 +33,7 @@ main :: proc() {
 		rl.BeginMode2D(camera)
 		draw_dot_grid(camera)
 		draw_board(board)
-		draw_freehand_tool(freehand_tool)
+		draw_draft(draft)
 		rl.EndMode2D()
 
 		rl.EndDrawing()

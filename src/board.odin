@@ -9,8 +9,28 @@ Freehand :: struct {
 	points: [dynamic]rl.Vector2,
 }
 
+Rectangle :: struct {
+	start, end: rl.Vector2,
+}
+
+Ellipse :: struct {
+	start, end: rl.Vector2,
+}
+
+Line :: struct {
+	start, end: rl.Vector2,
+}
+
+Arrow :: struct {
+	start, end: rl.Vector2,
+}
+
 Shape :: union {
 	Freehand,
+	Rectangle,
+	Ellipse,
+	Line,
+	Arrow,
 }
 
 Element :: struct {
@@ -31,7 +51,24 @@ destroy_element :: proc(element: ^Element) {
 	switch &shape in element.shape {
 	case Freehand:
 		delete(shape.points)
+	case Rectangle, Ellipse, Line, Arrow:
 	}
+}
+
+is_empty_shape :: proc(shape: Shape) -> bool {
+	switch s in shape {
+	case Freehand:
+		return len(s.points) == 0
+	case Rectangle:
+		return s.start == s.end
+	case Ellipse:
+		return s.start == s.end
+	case Line:
+		return s.start == s.end
+	case Arrow:
+		return s.start == s.end
+	}
+	return true
 }
 
 destroy_board :: proc(board: ^Board) {
