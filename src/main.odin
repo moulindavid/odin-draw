@@ -17,6 +17,8 @@ main :: proc() {
 	rl.SetExitKey(.KEY_NULL)
 
 	camera := make_camera()
+	board: Board
+	defer destroy_board(&board)
 
 	for !rl.WindowShouldClose() {
 		update_camera(&camera)
@@ -26,6 +28,7 @@ main :: proc() {
 
 		rl.BeginMode2D(camera)
 		draw_dot_grid(camera)
+		draw_board(board)
 		rl.EndMode2D()
 
 		rl.EndDrawing()
