@@ -49,19 +49,23 @@ Element :: struct {
 
 Board :: struct {
 	elements: [dynamic]Element,
+	revision: int,
 }
 
 add_element :: proc(board: ^Board, element: Element) {
 	append(&board.elements, element)
+	board.revision += 1
 }
 
 insert_element :: proc(board: ^Board, index: int, element: Element) {
 	inject_at(&board.elements, index, element)
+	board.revision += 1
 }
 
 take_element :: proc(board: ^Board, index: int) -> Element {
 	element := board.elements[index]
 	ordered_remove(&board.elements, index)
+	board.revision += 1
 	return element
 }
 
@@ -80,8 +84,9 @@ text_element_at :: proc(board: Board, point: rl.Vector2) -> (index: int, found: 
 	return
 }
 
-move_element :: proc(element: ^Element, offset: rl.Vector2) {
-	switch &shape in element.shape {
+move_element :: proc(board: ^Board, index: int, offset: rl.Vector2) {
+	board.revision += 1
+	switch &shape in board.elements[index].shape {
 	case Freehand:
 		for &point in shape.points {
 			point += offset

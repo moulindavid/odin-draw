@@ -86,7 +86,7 @@ select_element_at :: proc(selection: ^Selection, board: Board, point: rl.Vector2
 
 drag_selected_element :: proc(selection: Selection, board: ^Board, zoom: f32) {
 	if index, has_selection := selection.index.?; has_selection {
-		move_element(&board.elements[index], rl.GetMouseDelta() / zoom)
+		move_element(board, index, rl.GetMouseDelta() / zoom)
 	}
 }
 
