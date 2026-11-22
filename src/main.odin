@@ -8,6 +8,7 @@ INITIAL_HEIGHT :: 800
 TARGET_FPS :: 60
 BACKGROUND_COLOR :: rl.Color{250, 250, 250, 255}
 ACCENT_COLOR :: rl.Color{120, 110, 255, 255}
+DEFAULT_FILE_PATH :: "untitled.json"
 
 App :: struct {
 	camera:    rl.Camera2D,
@@ -17,6 +18,8 @@ App :: struct {
 	editor:    Text_Editor,
 	selection: Selection,
 	history:   History,
+	file_path: string,
+	status:    Status,
 }
 
 main :: proc() {
@@ -29,12 +32,14 @@ main :: proc() {
 
 	app := App {
 		camera = make_camera(),
-		tool   = .Select,
+		tool      = .Select,
+		file_path = DEFAULT_FILE_PATH,
 	}
 	defer destroy_board(&app.board)
 	defer destroy_text_editor(&app.editor)
 	init_history(&app.history, app.board)
 	defer destroy_history(&app.history)
+	defer destroy_status(&app.status)
 
 	for !rl.WindowShouldClose() {
 		update_app(&app)
@@ -47,6 +52,21 @@ update_app :: proc(app: ^App) {
 	update_input(app)
 	if !is_interacting(app^) {
 		record_change(&app.history, app.board)
+		update_file_keys(app)
+	}
+}
+
+update_file_keys :: proc(app: ^App) {
+	if is_control_down() && rl.IsKeyPressed(.S) {
+		save_to_current_file(app)
+	}
+}
+
+save_to_current_file :: proc(app: ^App) {
+	if save_board(app.board, app.file_path) {
+		show_status(&app.status, "Saved %s", app.file_path)
+	} else {
+		show_status(&app.status, "Could not save %s", app.file_path)
 	}
 }
 
@@ -111,4 +131,5 @@ draw_app :: proc(app: App) {
 	rl.EndMode2D()
 
 	draw_toolbar(app.tool)
+	draw_status(app.status)
 }
