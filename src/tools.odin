@@ -1,0 +1,78 @@
+package main
+
+import rl "vendor:raylib"
+
+FREEHAND_MIN_SCREEN_STEP :: 2.0
+
+Tool :: enum {
+	Freehand,
+}
+
+Draft :: struct {
+	element:   Element,
+	is_active: bool,
+}
+
+update_drawing :: proc(tool: Tool, draft: ^Draft, board: ^Board, camera: rl.Camera2D) {
+	if draft.is_active && (is_pan_mode_active() || !rl.IsMouseButtonDown(.LEFT)) {
+		commit_draft(draft, board)
+		return
+	}
+
+	if is_pan_mode_active() {
+		return
+	}
+
+	cursor := rl.GetScreenToWorld2D(rl.GetMousePosition(), camera)
+
+	if rl.IsMouseButtonPressed(.LEFT) {
+		start_draft(draft, tool, cursor)
+	} else if draft.is_active {
+		extend_draft(draft, cursor, camera.zoom)
+	}
+}
+
+start_draft :: proc(draft: ^Draft, tool: Tool, start: rl.Vector2) {
+	draft.element = Element {
+		shape        = new_shape(tool, start),
+		color        = DEFAULT_STROKE_COLOR,
+		stroke_width = DEFAULT_STROKE_WIDTH,
+	}
+	draft.is_active = true
+}
+
+new_shape :: proc(tool: Tool, start: rl.Vector2) -> Shape {
+	shape: Shape
+	switch tool {
+	case .Freehand:
+		freehand := Freehand{}
+		append(&freehand.points, start)
+		shape = freehand
+	}
+	return shape
+}
+
+extend_draft :: proc(draft: ^Draft, cursor: rl.Vector2, zoom: f32) {
+	switch &shape in draft.element.shape {
+	case Freehand:
+		extend_freehand(&shape, cursor, zoom)
+	}
+}
+
+extend_freehand :: proc(freehand: ^Freehand, point: rl.Vector2, zoom: f32) {
+	last_point := freehand.points[len(freehand.points) - 1]
+	if rl.Vector2Distance(last_point, point) * zoom >= FREEHAND_MIN_SCREEN_STEP {
+		append(&freehand.points, point)
+	}
+}
+
+commit_draft :: proc(draft: ^Draft, board: ^Board) {
+	add_element(board, draft.element)
+	draft^ = {}
+}
+
+draw_draft :: proc(draft: Draft) {
+	if draft.is_active {
+		draw_element(draft.element)
+	}
+}
