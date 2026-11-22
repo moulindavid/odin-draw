@@ -1,6 +1,8 @@
 package main
 
+import "core:fmt"
 import "core:os"
+import "core:path/filepath"
 import "core:strings"
 import rl "vendor:raylib"
 
@@ -13,15 +15,17 @@ ACCENT_COLOR :: rl.Color{120, 110, 255, 255}
 DEFAULT_FILE_PATH :: "untitled.json"
 
 App :: struct {
-	camera:    rl.Camera2D,
-	board:     Board,
-	tool:      Tool,
-	draft:     Draft,
-	editor:    Text_Editor,
-	selection: Selection,
-	history:   History,
-	file_path: string,
-	status:    Status,
+	camera:         rl.Camera2D,
+	board:          Board,
+	tool:           Tool,
+	draft:          Draft,
+	editor:         Text_Editor,
+	selection:      Selection,
+	history:        History,
+	file_path:      string,
+	saved_revision: int,
+	window_title:   string,
+	status:         Status,
 }
 
 main :: proc() {
@@ -42,8 +46,10 @@ main :: proc() {
 	defer destroy_history(&app.history)
 	defer destroy_status(&app.status)
 	defer delete(app.file_path)
+	defer delete(app.window_title)
 	open_initial_file(&app)
 	init_history(&app.history, app.board)
+	app.saved_revision = app.board.revision
 
 	for !rl.WindowShouldClose() {
 		update_app(&app)
@@ -88,7 +94,23 @@ open_file :: proc(app: ^App, path: string) {
 	app.file_path = strings.clone(path)
 	app.selection = {}
 	reset_history(&app.history, app.board)
+	app.saved_revision = app.board.revision
 	show_status(&app.status, "Opened %s", app.file_path)
+}
+
+has_unsaved_changes :: proc(app: App) -> bool {
+	return app.board.revision != app.saved_revision
+}
+
+update_window_title :: proc(app: ^App) {
+	unsaved_marker := "*" if has_unsaved_changes(app^) else ""
+	title := fmt.tprintf("%s%s - %s", unsaved_marker, filepath.base(app.file_path), WINDOW_TITLE)
+	if title == app.window_title {
+		return
+	}
+	delete(app.window_title)
+	app.window_title = strings.clone(title)
+	rl.SetWindowTitle(strings.clone_to_cstring(title, context.temp_allocator))
 }
 
 update_app :: proc(app: ^App) {
@@ -98,6 +120,7 @@ update_app :: proc(app: ^App) {
 		update_file_keys(app)
 		open_dropped_file(app)
 	}
+	update_window_title(app)
 }
 
 update_file_keys :: proc(app: ^App) {
@@ -108,6 +131,7 @@ update_file_keys :: proc(app: ^App) {
 
 save_to_current_file :: proc(app: ^App) {
 	if save_board(app.board, app.file_path) {
+		app.saved_revision = app.board.revision
 		show_status(&app.status, "Saved %s", app.file_path)
 	} else {
 		show_status(&app.status, "Could not save %s", app.file_path)
