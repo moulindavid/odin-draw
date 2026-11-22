@@ -12,6 +12,7 @@ Selection :: struct {
 	index:           Maybe(int),
 	is_dragging:     bool,
 	has_moved:       bool,
+	wants_text_edit: bool,
 	press_position:  rl.Vector2,
 	drag_position:   rl.Vector2,
 	last_click_time: f64,
@@ -29,19 +30,17 @@ update_select_tool :: proc(selection: ^Selection, editor: ^Text_Editor, board: ^
 		press_selection(selection, editor, board, cursor, camera.zoom)
 	} else if selection.is_dragging && rl.IsMouseButtonDown(.LEFT) {
 		drag_selection(selection, board, cursor, camera.zoom)
-	} else {
-		selection.is_dragging = false
+	} else if selection.is_dragging {
+		release_selection(selection, editor, board)
 	}
 }
 
 press_selection :: proc(selection: ^Selection, editor: ^Text_Editor, board: ^Board, cursor: rl.Vector2, zoom: f32) {
 	previous_selection := selection.index
 	select_element_at(selection, board^, cursor, SELECTION_HIT_SCREEN_TOLERANCE / zoom)
-	if is_double_click(selection, previous_selection) && open_selected_text(selection, editor, board) {
-		return
-	}
 
 	_, has_selection := selection.index.?
+	selection.wants_text_edit = is_double_click(selection, previous_selection) && is_text_selected(selection^, board^)
 	selection.is_dragging = has_selection
 	selection.has_moved = false
 	selection.press_position = cursor
@@ -59,6 +58,7 @@ drag_selection :: proc(selection: ^Selection, board: ^Board, cursor: rl.Vector2,
 			return
 		}
 		selection.has_moved = true
+		selection.wants_text_edit = false
 	}
 
 	move_element(board, index, cursor - selection.drag_position)
@@ -75,17 +75,26 @@ is_double_click :: proc(selection: ^Selection, previous_selection: Maybe(int)) -
 	return is_same_element && now - selection.last_click_time <= DOUBLE_CLICK_SECONDS
 }
 
-open_selected_text :: proc(selection: ^Selection, editor: ^Text_Editor, board: ^Board) -> bool {
+release_selection :: proc(selection: ^Selection, editor: ^Text_Editor, board: ^Board) {
+	selection.is_dragging = false
+	if selection.wants_text_edit {
+		open_selected_text(selection, editor, board)
+	}
+}
+
+is_text_selected :: proc(selection: Selection, board: Board) -> bool {
 	index, has_selection := selection.index.?
 	if !has_selection {
 		return false
 	}
-	if _, is_text := board.elements[index].shape.(Text); !is_text {
-		return false
-	}
+	_, is_text := board.elements[index].shape.(Text)
+	return is_text
+}
+
+open_selected_text :: proc(selection: ^Selection, editor: ^Text_Editor, board: ^Board) {
+	index, _ := selection.index.?
 	start_editing_existing_text(editor, board, index)
 	selection^ = {}
-	return true
 }
 
 update_selection_keys :: proc(selection: ^Selection, board: ^Board) {
