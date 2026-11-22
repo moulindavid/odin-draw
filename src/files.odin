@@ -10,6 +10,7 @@ UNTITLED_NAME :: "untitled"
 
 File_Action :: enum {
 	None,
+	Open,
 	Save,
 	Save_As,
 }
@@ -33,15 +34,23 @@ update_file_dialogs :: proc(app: ^App) -> (consumed: bool) {
 }
 
 file_action_from_shortcuts :: proc() -> File_Action {
-	if !is_control_down() || !rl.IsKeyPressed(.S) {
+	if !is_control_down() {
 		return .None
 	}
-	return .Save_As if is_shift_down() else .Save
+	if rl.IsKeyPressed(.O) {
+		return .Open
+	}
+	if rl.IsKeyPressed(.S) {
+		return .Save_As if is_shift_down() else .Save
+	}
+	return .None
 }
 
 run_file_action :: proc(app: ^App, action: File_Action) {
 	switch action {
 	case .None:
+	case .Open:
+		choose_file_to_open(app)
 	case .Save:
 		save_or_choose_file(app)
 	case .Save_As:
@@ -55,6 +64,10 @@ save_or_choose_file :: proc(app: ^App) -> (saved: bool) {
 		return false
 	}
 	return save_to_path(app, app.file_path)
+}
+
+choose_file_to_open :: proc(app: ^App) {
+	open_file_picker(&app.picker, .Open, current_directory(app^), "")
 }
 
 choose_save_file :: proc(app: ^App) {
