@@ -11,6 +11,7 @@ UNTITLED_NAME :: "untitled"
 File_Action :: enum {
 	None,
 	Open,
+	Open_Dropped,
 	Save,
 	Save_As,
 }
@@ -21,14 +22,18 @@ is_dialog_open :: proc(app: App) -> bool {
 
 update_file_dialogs :: proc(app: ^App) -> (consumed: bool) {
 	if app.prompt.is_open {
-		handle_prompt_choice(app, update_prompt(&app.prompt))
+		handle_prompt_choice(app, app.prompt.kind, update_prompt(&app.prompt))
 		return true
 	}
 
 	if app.picker.is_open {
 		result, path := update_file_picker(&app.picker)
-		if result == .Confirmed {
+		switch result {
+		case .None:
+		case .Confirmed:
 			handle_picked_path(app, path)
+		case .Cancelled:
+			app.pending_action = .None
 		}
 		return true
 	}
@@ -54,13 +59,37 @@ file_action_from_shortcuts :: proc() -> File_Action {
 run_file_action :: proc(app: ^App, action: File_Action) {
 	switch action {
 	case .None:
-	case .Open:
-		choose_file_to_open(app)
+	case .Open, .Open_Dropped:
+		request_board_change(app, action)
 	case .Save:
 		save_or_choose_file(app)
 	case .Save_As:
 		choose_save_file(app)
 	}
+}
+
+request_board_change :: proc(app: ^App, action: File_Action) {
+	if has_unsaved_changes(app^) {
+		app.pending_action = action
+		open_prompt(&app.prompt, .Unsaved_Changes)
+		return
+	}
+	change_board(app, action)
+}
+
+change_board :: proc(app: ^App, action: File_Action) {
+	#partial switch action {
+	case .Open:
+		choose_file_to_open(app)
+	case .Open_Dropped:
+		open_file(app, app.dropped_path)
+	}
+}
+
+continue_pending_action :: proc(app: ^App) {
+	action := app.pending_action
+	app.pending_action = .None
+	change_board(app, action)
 }
 
 save_or_choose_file :: proc(app: ^App) -> (saved: bool) {
@@ -90,7 +119,9 @@ handle_picked_path :: proc(app: ^App, path: string) {
 			return
 		}
 		close_file_picker(&app.picker)
-		save_to_path(app, path)
+		if save_to_path(app, path) {
+			continue_pending_action(app)
+		}
 	}
 }
 
@@ -100,12 +131,24 @@ ask_to_overwrite :: proc(app: ^App, path: string) {
 	open_prompt(&app.prompt, .Overwrite)
 }
 
-handle_prompt_choice :: proc(app: ^App, choice: Prompt_Choice) {
+handle_prompt_choice :: proc(app: ^App, kind: Prompt_Kind, choice: Prompt_Choice) {
 	switch choice {
-	case .None, .Cancel:
+	case .None:
+	case .Save:
+		if save_or_choose_file(app) {
+			continue_pending_action(app)
+		}
+	case .Discard:
+		continue_pending_action(app)
 	case .Replace:
 		close_file_picker(&app.picker)
-		save_to_path(app, app.overwrite_path)
+		if save_to_path(app, app.overwrite_path) {
+			continue_pending_action(app)
+		}
+	case .Cancel:
+		if kind == .Unsaved_Changes {
+			app.pending_action = .None
+		}
 	}
 }
 
@@ -139,7 +182,9 @@ open_dropped_file :: proc(app: ^App) {
 	defer rl.UnloadDroppedFiles(dropped)
 
 	if dropped.count > 0 {
-		open_file(app, string(dropped.paths[0]))
+		delete(app.dropped_path)
+		app.dropped_path = strings.clone(string(dropped.paths[0]))
+		run_file_action(app, .Open_Dropped)
 	}
 }
 

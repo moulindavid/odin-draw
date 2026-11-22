@@ -25,6 +25,8 @@ App :: struct {
 	picker:         File_Picker,
 	prompt:         Prompt,
 	overwrite_path: string,
+	dropped_path:   string,
+	pending_action: File_Action,
 }
 
 main :: proc() {
@@ -48,6 +50,7 @@ main :: proc() {
 	defer delete(app.window_title)
 	defer destroy_file_picker(&app.picker)
 	defer delete(app.overwrite_path)
+	defer delete(app.dropped_path)
 	open_initial_file(&app)
 	init_history(&app.history, app.board)
 	app.saved_revision = app.board.revision
@@ -65,7 +68,7 @@ file_path_from_arguments :: proc() -> string {
 
 update_app :: proc(app: ^App) {
 	update_input(app)
-	if !is_interacting(app^) {
+	if !is_interacting(app^) && !is_dialog_open(app^) {
 		record_change(&app.history, app.board)
 		open_dropped_file(app)
 	}

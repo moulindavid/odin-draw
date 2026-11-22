@@ -10,14 +10,20 @@ PROMPT_BUTTON_HEIGHT :: 32
 PROMPT_BUTTON_GAP :: 8
 
 Prompt_Kind :: enum {
+	Unsaved_Changes,
 	Overwrite,
 }
 
 Prompt_Choice :: enum {
 	None,
+	Save,
+	Discard,
 	Replace,
 	Cancel,
 }
+
+@(rodata)
+UNSAVED_CHANGES_CHOICES := [?]Prompt_Choice{.Save, .Discard, .Cancel}
 
 @(rodata)
 OVERWRITE_CHOICES := [?]Prompt_Choice{.Replace, .Cancel}
@@ -34,6 +40,8 @@ open_prompt :: proc(prompt: ^Prompt, kind: Prompt_Kind) {
 
 prompt_message :: proc(kind: Prompt_Kind) -> string {
 	switch kind {
+	case .Unsaved_Changes:
+		return "You have unsaved changes. Save them first?"
 	case .Overwrite:
 		return "A file with this name already exists. Replace it?"
 	}
@@ -42,6 +50,8 @@ prompt_message :: proc(kind: Prompt_Kind) -> string {
 
 prompt_choices :: proc(kind: Prompt_Kind) -> []Prompt_Choice {
 	switch kind {
+	case .Unsaved_Changes:
+		return UNSAVED_CHANGES_CHOICES[:]
 	case .Overwrite:
 		return OVERWRITE_CHOICES[:]
 	}
@@ -52,6 +62,10 @@ choice_label :: proc(choice: Prompt_Choice) -> string {
 	switch choice {
 	case .None:
 		return ""
+	case .Save:
+		return "Save"
+	case .Discard:
+		return "Discard"
 	case .Replace:
 		return "Replace"
 	case .Cancel:
