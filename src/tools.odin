@@ -5,19 +5,20 @@ import rl "vendor:raylib"
 FREEHAND_MIN_SCREEN_STEP :: 2.0
 
 Tool :: enum {
-	Freehand,
 	Rectangle,
 	Ellipse,
-	Line,
 	Arrow,
+	Line,
+	Freehand,
 }
 
-TOOL_SHORTCUTS :: [Tool][2]rl.KeyboardKey {
-	.Freehand  = {.P, .SIX},
+@(rodata)
+TOOL_SHORTCUTS := [Tool][2]rl.KeyboardKey {
 	.Rectangle = {.R, .TWO},
 	.Ellipse   = {.O, .THREE},
-	.Line      = {.L, .FIVE},
 	.Arrow     = {.A, .FOUR},
+	.Line      = {.L, .FIVE},
+	.Freehand  = {.P, .SIX},
 }
 
 tool_from_shortcuts :: proc(current: Tool) -> Tool {
