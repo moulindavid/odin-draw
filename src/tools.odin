@@ -6,6 +6,23 @@ FREEHAND_MIN_SCREEN_STEP :: 2.0
 
 Tool :: enum {
 	Freehand,
+	Rectangle,
+}
+
+TOOL_SHORTCUTS :: [Tool][2]rl.KeyboardKey {
+	.Freehand  = {.P, .SIX},
+	.Rectangle = {.R, .TWO},
+}
+
+tool_from_shortcuts :: proc(current: Tool) -> Tool {
+	for keys, tool in TOOL_SHORTCUTS {
+		for key in keys {
+			if rl.IsKeyPressed(key) {
+				return tool
+			}
+		}
+	}
+	return current
 }
 
 Draft :: struct {
@@ -48,6 +65,8 @@ new_shape :: proc(tool: Tool, start: rl.Vector2) -> Shape {
 		freehand := Freehand{}
 		append(&freehand.points, start)
 		shape = freehand
+	case .Rectangle:
+		shape = Rectangle{start, start}
 	}
 	return shape
 }
@@ -56,6 +75,8 @@ extend_draft :: proc(draft: ^Draft, cursor: rl.Vector2, zoom: f32) {
 	switch &shape in draft.element.shape {
 	case Freehand:
 		extend_freehand(&shape, cursor, zoom)
+	case Rectangle:
+		shape.end = cursor
 	}
 }
 
@@ -67,7 +88,11 @@ extend_freehand :: proc(freehand: ^Freehand, point: rl.Vector2, zoom: f32) {
 }
 
 commit_draft :: proc(draft: ^Draft, board: ^Board) {
-	add_element(board, draft.element)
+	if is_empty_shape(draft.element.shape) {
+		destroy_element(&draft.element)
+	} else {
+		add_element(board, draft.element)
+	}
 	draft^ = {}
 }
 

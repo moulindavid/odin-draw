@@ -24,6 +24,7 @@ main :: proc() {
 
 	for !rl.WindowShouldClose() {
 		update_camera(&camera)
+		tool = tool_from_shortcuts(tool)
 		update_drawing(tool, &draft, &board, camera)
 
 		rl.BeginDrawing()

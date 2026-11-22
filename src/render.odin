@@ -12,6 +12,17 @@ draw_element :: proc(element: Element) {
 	switch shape in element.shape {
 	case Freehand:
 		draw_polyline(shape.points[:], element.stroke_width, element.color)
+	case Rectangle:
+		rl.DrawRectangleLinesEx(rectangle_from_corners(shape.start, shape.end), element.stroke_width, element.color)
+	}
+}
+
+rectangle_from_corners :: proc(a, b: rl.Vector2) -> rl.Rectangle {
+	return rl.Rectangle {
+		x = min(a.x, b.x),
+		y = min(a.y, b.y),
+		width = abs(a.x - b.x),
+		height = abs(a.y - b.y),
 	}
 }
 
