@@ -55,7 +55,7 @@ update_app :: proc(app: ^App) {
 	}
 
 	if app.tool == .Text && !app.draft.is_active {
-		update_text_tool(&app.editor, app.camera)
+		update_text_tool(&app.editor, &app.board, app.camera)
 	} else {
 		update_drawing(app.tool, &app.draft, &app.board, app.camera)
 	}

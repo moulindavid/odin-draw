@@ -11,23 +11,42 @@ TEXT_CARET_SCREEN_WIDTH :: 1.5
 TEXT_CARET_BLINK_SECONDS :: 0.5
 
 Text_Editor :: struct {
-	is_active: bool,
-	position:  rl.Vector2,
-	buffer:    strings.Builder,
+	is_active:      bool,
+	position:       rl.Vector2,
+	color:          rl.Color,
+	buffer:         strings.Builder,
+	original_index: Maybe(int),
 }
 
-update_text_tool :: proc(editor: ^Text_Editor, camera: rl.Camera2D) {
+update_text_tool :: proc(editor: ^Text_Editor, board: ^Board, camera: rl.Camera2D) {
 	if !rl.IsMouseButtonPressed(.LEFT) || is_pan_mode_active() {
 		return
 	}
 	cursor := rl.GetScreenToWorld2D(rl.GetMousePosition(), camera)
-	start_text_editing(editor, cursor - {0, TEXT_FONT_SIZE / 2})
+	if index, found := text_element_at(board^, cursor); found {
+		start_editing_existing_text(editor, board, index)
+	} else {
+		start_text_editing(editor, cursor - {0, TEXT_FONT_SIZE / 2})
+	}
 }
 
 start_text_editing :: proc(editor: ^Text_Editor, position: rl.Vector2) {
 	editor.is_active = true
 	editor.position = position
+	editor.color = DEFAULT_STROKE_COLOR
+	editor.original_index = nil
 	strings.builder_reset(&editor.buffer)
+}
+
+start_editing_existing_text :: proc(editor: ^Text_Editor, board: ^Board, index: int) {
+	element := take_element(board, index)
+	defer destroy_element(&element)
+
+	text := element.shape.(Text)
+	start_text_editing(editor, text.position)
+	editor.color = element.color
+	editor.original_index = index
+	strings.write_string(&editor.buffer, text.content)
 }
 
 update_text_editor :: proc(editor: ^Text_Editor, board: ^Board, camera: rl.Camera2D) {
@@ -72,7 +91,12 @@ finish_text_editing :: proc(editor: ^Text_Editor, board: ^Board) {
 			content   = strings.clone(content),
 			font_size = TEXT_FONT_SIZE,
 		}
-		add_element(board, Element{shape = text, color = DEFAULT_STROKE_COLOR})
+		element := Element{shape = text, color = editor.color}
+		if index, was_existing := editor.original_index.?; was_existing {
+			insert_element(board, index, element)
+		} else {
+			add_element(board, element)
+		}
 	}
 	editor.is_active = false
 }
@@ -94,11 +118,11 @@ draw_text_editor :: proc(editor: Text_Editor, zoom: f32) {
 
 	content := strings.to_string(editor.buffer)
 	rl.DrawRectangleLinesEx(text_editor_bounds(editor), TEXT_EDITOR_BORDER_SCREEN_WIDTH / zoom, TEXT_EDITOR_BORDER_COLOR)
-	draw_text_block(content, editor.position, TEXT_FONT_SIZE, DEFAULT_STROKE_COLOR)
+	draw_text_block(content, editor.position, TEXT_FONT_SIZE, editor.color)
 
 	if is_caret_visible() {
 		caret := caret_position(content, editor.position, TEXT_FONT_SIZE)
-		rl.DrawLineEx(caret, caret + {0, TEXT_FONT_SIZE}, TEXT_CARET_SCREEN_WIDTH / zoom, DEFAULT_STROKE_COLOR)
+		rl.DrawLineEx(caret, caret + {0, TEXT_FONT_SIZE}, TEXT_CARET_SCREEN_WIDTH / zoom, editor.color)
 	}
 }
 
