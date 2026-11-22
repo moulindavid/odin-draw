@@ -19,6 +19,8 @@ draw_element :: proc(element: Element) {
 		rl.DrawRectangleLinesEx(rectangle_from_corners(shape.start, shape.end), element.stroke_width, element.color)
 	case Ellipse:
 		draw_ellipse_outline(shape.start, shape.end, element.stroke_width, element.color)
+	case Line:
+		draw_polyline([]rl.Vector2{shape.start, shape.end}, element.stroke_width, element.color)
 	}
 }
 

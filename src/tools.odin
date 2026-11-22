@@ -8,12 +8,14 @@ Tool :: enum {
 	Freehand,
 	Rectangle,
 	Ellipse,
+	Line,
 }
 
 TOOL_SHORTCUTS :: [Tool][2]rl.KeyboardKey {
 	.Freehand  = {.P, .SIX},
 	.Rectangle = {.R, .TWO},
 	.Ellipse   = {.O, .THREE},
+	.Line      = {.L, .FIVE},
 }
 
 tool_from_shortcuts :: proc(current: Tool) -> Tool {
@@ -71,6 +73,8 @@ new_shape :: proc(tool: Tool, start: rl.Vector2) -> Shape {
 		shape = Rectangle{start, start}
 	case .Ellipse:
 		shape = Ellipse{start, start}
+	case .Line:
+		shape = Line{start, start}
 	}
 	return shape
 }
@@ -82,6 +86,8 @@ extend_draft :: proc(draft: ^Draft, cursor: rl.Vector2, zoom: f32) {
 	case Rectangle:
 		shape.end = cursor
 	case Ellipse:
+		shape.end = cursor
+	case Line:
 		shape.end = cursor
 	}
 }
