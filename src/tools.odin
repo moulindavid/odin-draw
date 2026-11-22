@@ -96,6 +96,7 @@ extend_draft :: proc(draft: ^Draft, cursor: rl.Vector2, zoom: f32) {
 		shape.end = cursor
 	case Arrow:
 		shape.end = cursor
+	case Text:
 	}
 }
 

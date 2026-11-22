@@ -1,5 +1,6 @@
 package main
 
+import "core:strings"
 import rl "vendor:raylib"
 
 DEFAULT_STROKE_COLOR :: rl.Color{30, 30, 30, 255}
@@ -25,12 +26,19 @@ Arrow :: struct {
 	start, end: rl.Vector2,
 }
 
+Text :: struct {
+	position:  rl.Vector2,
+	content:   string,
+	font_size: f32,
+}
+
 Shape :: union {
 	Freehand,
 	Rectangle,
 	Ellipse,
 	Line,
 	Arrow,
+	Text,
 }
 
 Element :: struct {
@@ -51,6 +59,8 @@ destroy_element :: proc(element: ^Element) {
 	switch &shape in element.shape {
 	case Freehand:
 		delete(shape.points)
+	case Text:
+		delete(shape.content)
 	case Rectangle, Ellipse, Line, Arrow:
 	}
 }
@@ -67,6 +77,8 @@ is_empty_shape :: proc(shape: Shape) -> bool {
 		return s.start == s.end
 	case Arrow:
 		return s.start == s.end
+	case Text:
+		return strings.trim_space(s.content) == ""
 	}
 	return true
 }
