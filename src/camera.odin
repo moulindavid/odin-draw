@@ -11,23 +11,23 @@ make_camera :: proc() -> rl.Camera2D {
 	return rl.Camera2D{zoom = 1}
 }
 
-update_camera :: proc(camera: ^rl.Camera2D) {
+update_camera :: proc(camera: ^rl.Camera2D, space_pans: bool) {
 	zoom_toward_cursor(camera)
-	pan_with_mouse(camera)
-	show_pan_cursor(is_pan_mode_active())
+	pan_with_mouse(camera, space_pans)
+	show_pan_cursor(is_pan_mode_active(space_pans))
 }
 
-is_pan_mode_active :: proc() -> bool {
-	return rl.IsKeyDown(.SPACE) || rl.IsMouseButtonDown(.MIDDLE)
+is_pan_mode_active :: proc(space_pans := true) -> bool {
+	return (space_pans && rl.IsKeyDown(.SPACE)) || rl.IsMouseButtonDown(.MIDDLE)
 }
 
-is_panning :: proc() -> bool {
-	space_drag := rl.IsKeyDown(.SPACE) && rl.IsMouseButtonDown(.LEFT)
+is_panning :: proc(space_pans: bool) -> bool {
+	space_drag := space_pans && rl.IsKeyDown(.SPACE) && rl.IsMouseButtonDown(.LEFT)
 	return space_drag || rl.IsMouseButtonDown(.MIDDLE)
 }
 
-pan_with_mouse :: proc(camera: ^rl.Camera2D) {
-	if !is_panning() {
+pan_with_mouse :: proc(camera: ^rl.Camera2D, space_pans: bool) {
+	if !is_panning(space_pans) {
 		return
 	}
 	camera.target -= rl.GetMouseDelta() / camera.zoom

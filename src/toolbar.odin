@@ -89,7 +89,17 @@ draw_tool_icon :: proc(tool: Tool, button: rl.Rectangle) {
 		draw_polyline([]rl.Vector2{bottom_left, top_right}, TOOLBAR_ICON_STROKE, TOOLBAR_ICON_COLOR)
 	case .Freehand:
 		draw_squiggle(top_left, bottom_right)
+	case .Text:
+		draw_text_icon(button)
 	}
+}
+
+draw_text_icon :: proc(button: rl.Rectangle) {
+	TEXT_ICON_FONT_SIZE :: 20
+	width := rl.MeasureText("A", TEXT_ICON_FONT_SIZE)
+	x := i32(button.x + button.width / 2) - width / 2
+	y := i32(button.y + button.height / 2) - TEXT_ICON_FONT_SIZE / 2
+	rl.DrawText("A", x, y, TEXT_ICON_FONT_SIZE, TOOLBAR_ICON_COLOR)
 }
 
 draw_squiggle :: proc(top_left, bottom_right: rl.Vector2) {

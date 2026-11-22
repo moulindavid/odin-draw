@@ -25,6 +25,8 @@ draw_element :: proc(element: Element) {
 		draw_polyline([]rl.Vector2{shape.start, shape.end}, element.stroke_width, element.color)
 	case Arrow:
 		draw_arrow(shape.start, shape.end, element.stroke_width, element.color)
+	case Text:
+		draw_text_block(shape.content, shape.position, shape.font_size, element.color)
 	}
 }
 

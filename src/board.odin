@@ -1,5 +1,6 @@
 package main
 
+import "core:strings"
 import rl "vendor:raylib"
 
 DEFAULT_STROKE_COLOR :: rl.Color{30, 30, 30, 255}
@@ -25,12 +26,19 @@ Arrow :: struct {
 	start, end: rl.Vector2,
 }
 
+Text :: struct {
+	position:  rl.Vector2,
+	content:   string,
+	font_size: f32,
+}
+
 Shape :: union {
 	Freehand,
 	Rectangle,
 	Ellipse,
 	Line,
 	Arrow,
+	Text,
 }
 
 Element :: struct {
@@ -47,10 +55,32 @@ add_element :: proc(board: ^Board, element: Element) {
 	append(&board.elements, element)
 }
 
+insert_element :: proc(board: ^Board, index: int, element: Element) {
+	inject_at(&board.elements, index, element)
+}
+
+take_element :: proc(board: ^Board, index: int) -> Element {
+	element := board.elements[index]
+	ordered_remove(&board.elements, index)
+	return element
+}
+
+text_element_at :: proc(board: Board, point: rl.Vector2) -> (index: int, found: bool) {
+	#reverse for element, element_index in board.elements {
+		text, is_text := element.shape.(Text)
+		if is_text && rl.CheckCollisionPointRec(point, text_bounds(text)) {
+			return element_index, true
+		}
+	}
+	return
+}
+
 destroy_element :: proc(element: ^Element) {
 	switch &shape in element.shape {
 	case Freehand:
 		delete(shape.points)
+	case Text:
+		delete(shape.content)
 	case Rectangle, Ellipse, Line, Arrow:
 	}
 }
@@ -67,6 +97,8 @@ is_empty_shape :: proc(shape: Shape) -> bool {
 		return s.start == s.end
 	case Arrow:
 		return s.start == s.end
+	case Text:
+		return strings.trim_space(s.content) == ""
 	}
 	return true
 }
