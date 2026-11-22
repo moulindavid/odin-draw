@@ -13,9 +13,14 @@ Rectangle :: struct {
 	start, end: rl.Vector2,
 }
 
+Ellipse :: struct {
+	start, end: rl.Vector2,
+}
+
 Shape :: union {
 	Freehand,
 	Rectangle,
+	Ellipse,
 }
 
 Element :: struct {
@@ -36,7 +41,7 @@ destroy_element :: proc(element: ^Element) {
 	switch &shape in element.shape {
 	case Freehand:
 		delete(shape.points)
-	case Rectangle:
+	case Rectangle, Ellipse:
 	}
 }
 
@@ -45,6 +50,8 @@ is_empty_shape :: proc(shape: Shape) -> bool {
 	case Freehand:
 		return len(s.points) == 0
 	case Rectangle:
+		return s.start == s.end
+	case Ellipse:
 		return s.start == s.end
 	}
 	return true

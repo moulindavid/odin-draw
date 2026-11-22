@@ -7,11 +7,13 @@ FREEHAND_MIN_SCREEN_STEP :: 2.0
 Tool :: enum {
 	Freehand,
 	Rectangle,
+	Ellipse,
 }
 
 TOOL_SHORTCUTS :: [Tool][2]rl.KeyboardKey {
 	.Freehand  = {.P, .SIX},
 	.Rectangle = {.R, .TWO},
+	.Ellipse   = {.O, .THREE},
 }
 
 tool_from_shortcuts :: proc(current: Tool) -> Tool {
@@ -67,6 +69,8 @@ new_shape :: proc(tool: Tool, start: rl.Vector2) -> Shape {
 		shape = freehand
 	case .Rectangle:
 		shape = Rectangle{start, start}
+	case .Ellipse:
+		shape = Ellipse{start, start}
 	}
 	return shape
 }
@@ -76,6 +80,8 @@ extend_draft :: proc(draft: ^Draft, cursor: rl.Vector2, zoom: f32) {
 	case Freehand:
 		extend_freehand(&shape, cursor, zoom)
 	case Rectangle:
+		shape.end = cursor
+	case Ellipse:
 		shape.end = cursor
 	}
 }
