@@ -10,6 +10,7 @@ UNTITLED_NAME :: "untitled"
 
 File_Action :: enum {
 	None,
+	New,
 	Open,
 	Open_Dropped,
 	Save,
@@ -47,6 +48,9 @@ file_action_from_shortcuts :: proc() -> File_Action {
 	if !is_control_down() {
 		return .None
 	}
+	if rl.IsKeyPressed(.N) {
+		return .New
+	}
 	if rl.IsKeyPressed(.O) {
 		return .Open
 	}
@@ -59,7 +63,7 @@ file_action_from_shortcuts :: proc() -> File_Action {
 run_file_action :: proc(app: ^App, action: File_Action) {
 	switch action {
 	case .None:
-	case .Open, .Open_Dropped:
+	case .New, .Open, .Open_Dropped:
 		request_board_change(app, action)
 	case .Save:
 		save_or_choose_file(app)
@@ -79,6 +83,8 @@ request_board_change :: proc(app: ^App, action: File_Action) {
 
 change_board :: proc(app: ^App, action: File_Action) {
 	#partial switch action {
+	case .New:
+		start_new_board(app)
 	case .Open:
 		choose_file_to_open(app)
 	case .Open_Dropped:
@@ -198,6 +204,17 @@ open_file :: proc(app: ^App, path: string) {
 	reset_history(&app.history, app.board)
 	app.saved_revision = app.board.revision
 	show_status(&app.status, "Opened %s", filepath.base(app.file_path))
+}
+
+start_new_board :: proc(app: ^App) {
+	set_elements(&app.board, {})
+	delete(app.file_path)
+	app.file_path = ""
+	app.camera = make_camera()
+	app.selection = {}
+	reset_history(&app.history, app.board)
+	app.saved_revision = app.board.revision
+	show_status(&app.status, "New board")
 }
 
 set_file_path :: proc(app: ^App, path: string) {
