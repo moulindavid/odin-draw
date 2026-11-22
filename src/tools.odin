@@ -26,6 +26,9 @@ TOOL_SHORTCUTS := [Tool][2]rl.KeyboardKey {
 }
 
 tool_from_shortcuts :: proc(current: Tool) -> Tool {
+	if is_control_down() {
+		return current
+	}
 	for keys, tool in TOOL_SHORTCUTS {
 		for key in keys {
 			if rl.IsKeyPressed(key) {

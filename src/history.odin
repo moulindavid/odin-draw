@@ -41,6 +41,12 @@ discard_redo_states :: proc(history: ^History) {
 	}
 }
 
+reset_history :: proc(history: ^History, board: Board) {
+	destroy_history(history)
+	history^ = {}
+	init_history(history, board)
+}
+
 destroy_history :: proc(history: ^History) {
 	for state in history.states {
 		destroy_elements(state)
