@@ -1,5 +1,6 @@
 package main
 
+import "core:os"
 import rl "vendor:raylib"
 
 WINDOW_TITLE :: "excalidraw-local"
@@ -31,20 +32,36 @@ main :: proc() {
 	rl.SetExitKey(.KEY_NULL)
 
 	app := App {
-		camera = make_camera(),
+		camera    = make_camera(),
 		tool      = .Select,
-		file_path = DEFAULT_FILE_PATH,
+		file_path = file_path_from_arguments(),
 	}
 	defer destroy_board(&app.board)
 	defer destroy_text_editor(&app.editor)
-	init_history(&app.history, app.board)
 	defer destroy_history(&app.history)
 	defer destroy_status(&app.status)
+	open_initial_file(&app)
+	init_history(&app.history, app.board)
 
 	for !rl.WindowShouldClose() {
 		update_app(&app)
 		draw_app(app)
 		free_all(context.temp_allocator)
+	}
+}
+
+file_path_from_arguments :: proc() -> string {
+	return os.args[1] if len(os.args) > 1 else DEFAULT_FILE_PATH
+}
+
+open_initial_file :: proc(app: ^App) {
+	if !os.exists(app.file_path) {
+		return
+	}
+	if load_board(&app.board, app.file_path) {
+		show_status(&app.status, "Opened %s", app.file_path)
+	} else {
+		show_status(&app.status, "Could not open %s", app.file_path)
 	}
 }
 
