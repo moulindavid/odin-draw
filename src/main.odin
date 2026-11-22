@@ -63,7 +63,7 @@ update_app :: proc(app: ^App) {
 
 	update_selection_keys(&app.selection, &app.board)
 
-	if is_over_toolbar(rl.GetMousePosition()) {
+	if !app.selection.is_dragging && is_over_toolbar(rl.GetMousePosition()) {
 		return
 	}
 
