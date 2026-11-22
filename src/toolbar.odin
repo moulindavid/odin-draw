@@ -79,10 +79,13 @@ draw_tool_icon :: proc(tool: Tool, button: rl.Rectangle) {
 	top_right := rl.Vector2{bottom_right.x, top_left.y}
 
 	switch tool {
+	case .Select:
+		draw_pointer_icon(top_left, bottom_right)
 	case .Rectangle:
 		rl.DrawRectangleLinesEx(rectangle_from_corners(top_left, bottom_right), TOOLBAR_ICON_STROKE, TOOLBAR_ICON_COLOR)
 	case .Ellipse:
-		draw_ellipse_outline(top_left, bottom_right, TOOLBAR_ICON_STROKE, TOOLBAR_ICON_COLOR)
+		points := ellipse_points(top_left, bottom_right)
+		draw_polyline(points[:], TOOLBAR_ICON_STROKE, TOOLBAR_ICON_COLOR)
 	case .Arrow:
 		draw_arrow(bottom_left, top_right, TOOLBAR_ICON_STROKE, TOOLBAR_ICON_COLOR)
 	case .Line:
@@ -92,6 +95,15 @@ draw_tool_icon :: proc(tool: Tool, button: rl.Rectangle) {
 	case .Text:
 		draw_text_icon(button)
 	}
+}
+
+draw_pointer_icon :: proc(top_left, bottom_right: rl.Vector2) {
+	size := bottom_right - top_left
+	outline := [?]rl.Vector2{{0.2, 0}, {0.2, 0.8}, {0.42, 0.62}, {0.6, 1}, {0.74, 0.94}, {0.56, 0.56}, {0.84, 0.56}, {0.2, 0}}
+	for &point in outline {
+		point = top_left + point * size
+	}
+	draw_polyline(outline[:], TOOLBAR_ICON_STROKE, TOOLBAR_ICON_COLOR)
 }
 
 draw_text_icon :: proc(button: rl.Rectangle) {

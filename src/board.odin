@@ -65,6 +65,11 @@ take_element :: proc(board: ^Board, index: int) -> Element {
 	return element
 }
 
+remove_element :: proc(board: ^Board, index: int) {
+	element := take_element(board, index)
+	destroy_element(&element)
+}
+
 text_element_at :: proc(board: Board, point: rl.Vector2) -> (index: int, found: bool) {
 	#reverse for element, element_index in board.elements {
 		text, is_text := element.shape.(Text)
@@ -73,6 +78,29 @@ text_element_at :: proc(board: Board, point: rl.Vector2) -> (index: int, found: 
 		}
 	}
 	return
+}
+
+move_element :: proc(element: ^Element, offset: rl.Vector2) {
+	switch &shape in element.shape {
+	case Freehand:
+		for &point in shape.points {
+			point += offset
+		}
+	case Rectangle:
+		shape.start += offset
+		shape.end += offset
+	case Ellipse:
+		shape.start += offset
+		shape.end += offset
+	case Line:
+		shape.start += offset
+		shape.end += offset
+	case Arrow:
+		shape.start += offset
+		shape.end += offset
+	case Text:
+		shape.position += offset
+	}
 }
 
 destroy_element :: proc(element: ^Element) {

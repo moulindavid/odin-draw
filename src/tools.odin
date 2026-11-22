@@ -5,6 +5,7 @@ import rl "vendor:raylib"
 FREEHAND_MIN_SCREEN_STEP :: 2.0
 
 Tool :: enum {
+	Select,
 	Rectangle,
 	Ellipse,
 	Arrow,
@@ -15,6 +16,7 @@ Tool :: enum {
 
 @(rodata)
 TOOL_SHORTCUTS := [Tool][2]rl.KeyboardKey {
+	.Select    = {.V, .ONE},
 	.Rectangle = {.R, .TWO},
 	.Ellipse   = {.O, .THREE},
 	.Arrow     = {.A, .FOUR},
@@ -82,7 +84,7 @@ new_shape :: proc(tool: Tool, start: rl.Vector2) -> Shape {
 		shape = Line{start, start}
 	case .Arrow:
 		shape = Arrow{start, start}
-	case .Text:
+	case .Select, .Text:
 	}
 	return shape
 }

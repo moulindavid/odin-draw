@@ -7,13 +7,15 @@ INITIAL_WIDTH :: 1280
 INITIAL_HEIGHT :: 800
 TARGET_FPS :: 60
 BACKGROUND_COLOR :: rl.Color{250, 250, 250, 255}
+ACCENT_COLOR :: rl.Color{120, 110, 255, 255}
 
 App :: struct {
-	camera: rl.Camera2D,
-	board:  Board,
-	tool:   Tool,
-	draft:  Draft,
-	editor: Text_Editor,
+	camera:    rl.Camera2D,
+	board:     Board,
+	tool:      Tool,
+	draft:     Draft,
+	editor:    Text_Editor,
+	selection: Selection,
 }
 
 main :: proc() {
@@ -26,7 +28,7 @@ main :: proc() {
 
 	app := App {
 		camera = make_camera(),
-		tool   = .Freehand,
+		tool   = .Select,
 	}
 	defer destroy_board(&app.board)
 	defer destroy_text_editor(&app.editor)
@@ -47,16 +49,30 @@ update_app :: proc(app: ^App) {
 		return
 	}
 
+	previous_tool := app.tool
 	app.tool = tool_from_shortcuts(app.tool)
 	app.tool = tool_from_toolbar_click(app.tool)
+	if app.tool != previous_tool {
+		app.selection = {}
+	}
 
-	if !app.draft.is_active && is_over_toolbar(rl.GetMousePosition()) {
+	if app.draft.is_active {
+		update_drawing(app.tool, &app.draft, &app.board, app.camera)
 		return
 	}
 
-	if app.tool == .Text && !app.draft.is_active {
+	update_selection_keys(&app.selection, &app.board)
+
+	if !app.selection.is_dragging && is_over_toolbar(rl.GetMousePosition()) {
+		return
+	}
+
+	#partial switch app.tool {
+	case .Select:
+		update_select_tool(&app.selection, &app.editor, &app.board, app.camera)
+	case .Text:
 		update_text_tool(&app.editor, &app.board, app.camera)
-	} else {
+	case:
 		update_drawing(app.tool, &app.draft, &app.board, app.camera)
 	}
 }
@@ -70,6 +86,7 @@ draw_app :: proc(app: App) {
 	rl.BeginMode2D(app.camera)
 	draw_dot_grid(app.camera)
 	draw_board(app.board)
+	draw_selection(app.selection, app.board, app.camera.zoom)
 	draw_draft(app.draft)
 	draw_text_editor(app.editor, app.camera.zoom)
 	rl.EndMode2D()
