@@ -16,9 +16,16 @@ main :: proc() {
 	rl.SetTargetFPS(TARGET_FPS)
 	rl.SetExitKey(.KEY_NULL)
 
+	camera := make_camera()
+
 	for !rl.WindowShouldClose() {
 		rl.BeginDrawing()
 		rl.ClearBackground(BACKGROUND_COLOR)
+
+		rl.BeginMode2D(camera)
+		draw_dot_grid(camera)
+		rl.EndMode2D()
+
 		rl.EndDrawing()
 	}
 }
