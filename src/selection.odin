@@ -5,13 +5,15 @@ import rl "vendor:raylib"
 SELECTION_HIT_SCREEN_TOLERANCE :: 6.0
 SELECTION_SCREEN_PADDING :: 6.0
 SELECTION_BORDER_SCREEN_WIDTH :: 1.0
+DOUBLE_CLICK_SECONDS :: 0.4
 
 Selection :: struct {
-	index:       Maybe(int),
-	is_dragging: bool,
+	index:           Maybe(int),
+	is_dragging:     bool,
+	last_click_time: f64,
 }
 
-update_select_tool :: proc(selection: ^Selection, board: ^Board, camera: rl.Camera2D) {
+update_select_tool :: proc(selection: ^Selection, editor: ^Text_Editor, board: ^Board, camera: rl.Camera2D) {
 	if is_pan_mode_active() || !rl.IsMouseButtonDown(.LEFT) {
 		selection.is_dragging = false
 	}
@@ -22,12 +24,39 @@ update_select_tool :: proc(selection: ^Selection, board: ^Board, camera: rl.Came
 
 	if rl.IsMouseButtonPressed(.LEFT) {
 		cursor := rl.GetScreenToWorld2D(rl.GetMousePosition(), camera)
+		previous_selection := selection.index
 		select_element_at(selection, board^, cursor, SELECTION_HIT_SCREEN_TOLERANCE / camera.zoom)
+		if is_double_click(selection, previous_selection) && open_selected_text(selection, editor, board) {
+			return
+		}
 		_, has_selection := selection.index.?
 		selection.is_dragging = has_selection
 	} else if selection.is_dragging {
 		drag_selected_element(selection^, board, camera.zoom)
 	}
+}
+
+is_double_click :: proc(selection: ^Selection, previous_selection: Maybe(int)) -> bool {
+	now := rl.GetTime()
+	defer selection.last_click_time = now
+
+	index, has_selection := selection.index.?
+	previous_index, had_selection := previous_selection.?
+	is_same_element := has_selection && had_selection && index == previous_index
+	return is_same_element && now - selection.last_click_time <= DOUBLE_CLICK_SECONDS
+}
+
+open_selected_text :: proc(selection: ^Selection, editor: ^Text_Editor, board: ^Board) -> bool {
+	index, has_selection := selection.index.?
+	if !has_selection {
+		return false
+	}
+	if _, is_text := board.elements[index].shape.(Text); !is_text {
+		return false
+	}
+	start_editing_existing_text(editor, board, index)
+	selection^ = {}
+	return true
 }
 
 update_selection_keys :: proc(selection: ^Selection, board: ^Board) {

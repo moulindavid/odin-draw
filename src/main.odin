@@ -69,7 +69,7 @@ update_app :: proc(app: ^App) {
 
 	#partial switch app.tool {
 	case .Select:
-		update_select_tool(&app.selection, &app.board, app.camera)
+		update_select_tool(&app.selection, &app.editor, &app.board, app.camera)
 	case .Text:
 		update_text_tool(&app.editor, &app.board, app.camera)
 	case:
