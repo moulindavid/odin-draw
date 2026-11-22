@@ -61,6 +61,8 @@ update_app :: proc(app: ^App) {
 		return
 	}
 
+	update_selection_keys(&app.selection, &app.board)
+
 	if is_over_toolbar(rl.GetMousePosition()) {
 		return
 	}

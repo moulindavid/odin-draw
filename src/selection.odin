@@ -28,9 +28,22 @@ update_select_tool :: proc(selection: ^Selection, board: ^Board, camera: rl.Came
 	} else if selection.is_dragging {
 		drag_selected_element(selection^, board, camera.zoom)
 	}
+}
+
+update_selection_keys :: proc(selection: ^Selection, board: ^Board) {
+	if rl.IsKeyPressed(.DELETE) || rl.IsKeyPressed(.BACKSPACE) {
+		delete_selected_element(selection, board)
+	}
 
 	if rl.IsKeyPressed(.ESCAPE) {
 		selection.index = nil
+	}
+}
+
+delete_selected_element :: proc(selection: ^Selection, board: ^Board) {
+	if index, has_selection := selection.index.?; has_selection {
+		remove_element(board, index)
+		selection^ = {}
 	}
 }
 
