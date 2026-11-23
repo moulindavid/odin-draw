@@ -1,6 +1,7 @@
 package main
 
 import "core:strings"
+import "core:unicode"
 import "core:unicode/utf8"
 import rl "vendor:raylib"
 
@@ -8,10 +9,12 @@ TEXT_FIELD_PADDING :: 8.0
 TEXT_FIELD_CARET_WIDTH :: 1.5
 
 Text_Field :: struct {
-	buffer:      strings.Builder,
-	caret:       int,
-	anchor:      int,
-	is_dragging: bool,
+	buffer:          strings.Builder,
+	caret:           int,
+	anchor:          int,
+	is_dragging:     bool,
+	click_count:     int,
+	last_click_time: f64,
 }
 
 field_text :: proc(field: Text_Field) -> string {
@@ -47,13 +50,56 @@ update_text_field :: proc(field: ^Text_Field, bounds: rl.Rectangle) {
 update_field_mouse :: proc(field: ^Text_Field, bounds: rl.Rectangle) {
 	if is_clicked(bounds) {
 		index := field_index_at(field^, rl.GetMousePosition().x - bounds.x - TEXT_FIELD_PADDING)
-		move_field_caret(field, index, extend = is_shift_down())
-		field.is_dragging = true
+		switch count_field_click(field) {
+		case 1:
+			move_field_caret(field, index, extend = is_shift_down())
+			field.is_dragging = true
+		case 2:
+			select_word_at(field, index)
+		case:
+			select_field_range(field, 0, len(field_text(field^)))
+		}
 	} else if field.is_dragging && rl.IsMouseButtonDown(.LEFT) {
 		field.caret = field_index_at(field^, rl.GetMousePosition().x - bounds.x - TEXT_FIELD_PADDING)
 	} else {
 		field.is_dragging = false
 	}
+}
+
+count_field_click :: proc(field: ^Text_Field) -> int {
+	now := rl.GetTime()
+	is_repeated := now - field.last_click_time <= DOUBLE_CLICK_SECONDS
+	field.click_count = field.click_count + 1 if is_repeated else 1
+	field.last_click_time = now
+	return field.click_count
+}
+
+select_word_at :: proc(field: ^Text_Field, index: int) {
+	text := field_text(field^)
+	if len(text) == 0 {
+		return
+	}
+	clicked := index if index < len(text) else previous_rune_index(text, index)
+	is_word := is_word_character(rune_at(text, clicked))
+
+	start := clicked
+	for start > 0 && is_word_character(rune_at(text, previous_rune_index(text, start))) == is_word {
+		start = previous_rune_index(text, start)
+	}
+	end := next_rune_index(text, clicked)
+	for end < len(text) && is_word_character(rune_at(text, end)) == is_word {
+		end = next_rune_index(text, end)
+	}
+	select_field_range(field, start, end)
+}
+
+rune_at :: proc(text: string, index: int) -> rune {
+	character, _ := utf8.decode_rune_in_string(text[index:])
+	return character
+}
+
+is_word_character :: proc(character: rune) -> bool {
+	return unicode.is_letter(character) || unicode.is_digit(character) || character == '_'
 }
 
 update_field_navigation :: proc(field: ^Text_Field) {
