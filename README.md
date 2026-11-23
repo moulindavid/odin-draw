@@ -22,7 +22,7 @@ Open the menu left of the toolbar to create, open or save boards. Drop a `.json`
 | `L` `5` | Line |
 | `P` `6` | Freehand |
 | `T` `7` | Text |
-| `Esc` | Back to select |
+| `Esc` | Deselect, finish text or cancel drawing |
 | `Ctrl+N` | New board |
 | `Ctrl+O` | Open |
 | `Ctrl+S` | Save |

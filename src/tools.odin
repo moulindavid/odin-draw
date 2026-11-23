@@ -29,9 +29,6 @@ tool_from_shortcuts :: proc(current: Tool) -> Tool {
 	if is_control_down() {
 		return current
 	}
-	if rl.IsKeyPressed(.ESCAPE) {
-		return .Select
-	}
 	for keys, tool in TOOL_SHORTCUTS {
 		for key in keys {
 			if rl.IsKeyPressed(key) {
