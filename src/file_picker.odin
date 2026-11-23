@@ -40,7 +40,7 @@ File_Picker :: struct {
 	mode:               Picker_Mode,
 	directory:          string,
 	entries:            [dynamic]File_Entry,
-	file_name:          strings.Builder,
+	file_name:          Text_Field,
 	scroll:             int,
 	last_clicked_entry: int,
 	last_click_time:    f64,
@@ -49,8 +49,8 @@ File_Picker :: struct {
 open_file_picker :: proc(picker: ^File_Picker, mode: Picker_Mode, directory: string, suggested_name: string) {
 	picker.is_open = true
 	picker.mode = mode
-	strings.builder_reset(&picker.file_name)
-	strings.write_string(&picker.file_name, suggested_name)
+	set_field_text(&picker.file_name, suggested_name)
+	select_field_range(&picker.file_name, 0, len(suggested_name) - len(filepath.ext(suggested_name)))
 	change_directory(picker, directory)
 }
 
@@ -121,7 +121,7 @@ update_file_picker :: proc(picker: ^File_Picker) -> (result: Picker_Result, path
 		return .Cancelled, ""
 	}
 
-	type_into(&picker.file_name)
+	update_text_field(&picker.file_name, picker_field_bounds())
 	scroll_entries(picker)
 
 	if index, clicked := clicked_entry(picker^); clicked {
@@ -174,13 +174,12 @@ choose_entry :: proc(picker: ^File_Picker, index: int) -> (wants_confirm: bool) 
 	picker.last_clicked_entry = index
 	picker.last_click_time = now
 
-	strings.builder_reset(&picker.file_name)
-	strings.write_string(&picker.file_name, entry.name)
+	set_field_text(&picker.file_name, entry.name)
 	return is_double_click
 }
 
 confirm_picker :: proc(picker: File_Picker) -> (result: Picker_Result, path: string) {
-	name := strings.trim_space(strings.to_string(picker.file_name))
+	name := strings.trim_space(field_text(picker.file_name))
 	if name == "" {
 		return .None, ""
 	}
@@ -257,7 +256,7 @@ draw_file_picker :: proc(picker: File_Picker) {
 	draw_label(fit_label_from_end(picker.directory, content_width), content_x, path_y, UI_MUTED_TEXT_COLOR)
 
 	draw_entries(picker)
-	draw_file_name_field(picker)
+	draw_text_field(picker.file_name, picker_field_bounds())
 	draw_button(picker_cancel_button_bounds(), "Cancel")
 	draw_button(picker_confirm_button_bounds(), picker_confirm_label(picker.mode), is_primary = true)
 }
@@ -265,7 +264,7 @@ draw_file_picker :: proc(picker: File_Picker) {
 draw_entries :: proc(picker: File_Picker) {
 	list := picker_list_bounds()
 	rl.DrawRectangleLinesEx(list, 1, UI_BORDER_COLOR)
-	current_name := strings.to_string(picker.file_name)
+	current_name := field_text(picker.file_name)
 
 	for row in 0 ..< visible_row_count() {
 		entry_index := picker.scroll + row
@@ -287,25 +286,9 @@ draw_entries :: proc(picker: File_Picker) {
 	}
 }
 
-draw_file_name_field :: proc(picker: File_Picker) {
-	field := picker_field_bounds()
-	draw_rounded(field, UI_PANEL_COLOR)
-	draw_rounded_border(field, ACCENT_COLOR)
-
-	name := strings.to_string(picker.file_name)
-	text_x := field.x + 8
-	text_y := field.y + (PICKER_FIELD_HEIGHT - UI_FONT_SIZE) / 2
-	draw_label(name, text_x, text_y, UI_TEXT_COLOR)
-
-	if is_caret_visible() {
-		caret_x := text_x + f32(measure_label(name)) + 2
-		rl.DrawLineEx({caret_x, text_y}, {caret_x, text_y + UI_FONT_SIZE}, 1.5, UI_TEXT_COLOR)
-	}
-}
-
 destroy_file_picker :: proc(picker: ^File_Picker) {
 	clear_entries(picker)
 	delete(picker.entries)
 	delete(picker.directory)
-	strings.builder_destroy(&picker.file_name)
+	destroy_text_field(&picker.file_name)
 }
