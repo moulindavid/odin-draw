@@ -206,7 +206,7 @@ open_file :: proc(app: ^App, path: string) {
 		return
 	}
 	set_file_path(app, path)
-	app.selection = {}
+	reset_selection(&app.selection)
 	reset_history(&app.history, app.board)
 	app.saved_revision = app.board.revision
 	show_status(&app.status, "Opened %s", filepath.base(app.file_path))
@@ -217,7 +217,7 @@ start_new_board :: proc(app: ^App) {
 	delete(app.file_path)
 	app.file_path = ""
 	app.camera = make_camera()
-	app.selection = {}
+	reset_selection(&app.selection)
 	reset_history(&app.history, app.board)
 	app.saved_revision = app.board.revision
 	show_status(&app.status, "New board")

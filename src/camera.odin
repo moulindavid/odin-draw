@@ -14,7 +14,6 @@ make_camera :: proc() -> rl.Camera2D {
 update_camera :: proc(camera: ^rl.Camera2D, space_pans: bool) {
 	zoom_toward_cursor(camera)
 	pan_with_mouse(camera, space_pans)
-	show_pan_cursor(is_pan_mode_active(space_pans))
 }
 
 is_pan_mode_active :: proc(space_pans := true) -> bool {
@@ -31,10 +30,6 @@ pan_with_mouse :: proc(camera: ^rl.Camera2D, space_pans: bool) {
 		return
 	}
 	camera.target -= rl.GetMouseDelta() / camera.zoom
-}
-
-show_pan_cursor :: proc(active: bool) {
-	rl.SetMouseCursor(active ? .RESIZE_ALL : .DEFAULT)
 }
 
 zoom_toward_cursor :: proc(camera: ^rl.Camera2D) {
