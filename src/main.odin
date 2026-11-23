@@ -134,6 +134,11 @@ update_input :: proc(app: ^App) {
 		return
 	}
 
+	if app.draft.is_active && rl.IsKeyPressed(.ESCAPE) {
+		cancel_draft(&app.draft)
+		return
+	}
+
 	previous_tool := app.tool
 	app.tool = tool_from_shortcuts(app.tool)
 	app.tool = tool_from_toolbar_click(app.tool)

@@ -127,6 +127,11 @@ commit_draft :: proc(draft: ^Draft, board: ^Board) {
 	draft^ = {}
 }
 
+cancel_draft :: proc(draft: ^Draft) {
+	destroy_element(&draft.element)
+	draft^ = {}
+}
+
 draw_draft :: proc(draft: Draft) {
 	if draft.is_active {
 		draw_element(draft.element)
