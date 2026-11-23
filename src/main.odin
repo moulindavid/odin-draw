@@ -123,14 +123,16 @@ update_input :: proc(app: ^App) {
 
 	if is_typing {
 		update_text_editor(&app.editor, &app.board, app.camera)
-		if rl.IsKeyPressed(.ESCAPE) {
-			app.tool = .Select
-		}
 		return
 	}
 
 	is_busy := app.draft.is_active || app.selection.is_dragging
 	if !is_busy && update_file_dialogs(app) {
+		return
+	}
+
+	if app.draft.is_active && rl.IsKeyPressed(.ESCAPE) {
+		cancel_draft(&app.draft)
 		return
 	}
 
