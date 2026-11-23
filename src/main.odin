@@ -29,6 +29,7 @@ App :: struct {
 	dropped_path:   string,
 	pending_action: File_Action,
 	menu:           Menu,
+	cursor:         rl.MouseCursor,
 }
 
 main :: proc() {
@@ -64,6 +65,7 @@ make_app :: proc(file_path: string) -> App {
 
 destroy_app :: proc(app: ^App) {
 	destroy_board(&app.board)
+	reset_selection(&app.selection)
 	destroy_text_editor(&app.editor)
 	destroy_history(&app.history)
 	destroy_status(&app.status)
@@ -85,6 +87,28 @@ update_app :: proc(app: ^App) {
 		open_dropped_file(app)
 	}
 	update_window_title(app)
+	update_cursor(app)
+}
+
+update_cursor :: proc(app: ^App) {
+	cursor := wanted_cursor(app^)
+	if cursor != app.cursor {
+		rl.SetMouseCursor(cursor)
+		app.cursor = cursor
+	}
+}
+
+wanted_cursor :: proc(app: App) -> rl.MouseCursor {
+	if is_dialog_open(app) {
+		return .DEFAULT
+	}
+	if is_pan_mode_active(space_pans = !app.editor.is_active) {
+		return .RESIZE_ALL
+	}
+	if app.tool == .Select {
+		return selection_cursor(app.selection, app.board, app.camera)
+	}
+	return .DEFAULT
 }
 
 is_interacting :: proc(app: App) -> bool {
@@ -114,7 +138,7 @@ update_input :: proc(app: ^App) {
 	app.tool = tool_from_shortcuts(app.tool)
 	app.tool = tool_from_toolbar_click(app.tool)
 	if app.tool != previous_tool {
-		app.selection = {}
+		reset_selection(&app.selection)
 	}
 
 	if app.draft.is_active {
@@ -123,7 +147,7 @@ update_input :: proc(app: ^App) {
 	}
 
 	if !app.selection.is_dragging && update_history_keys(&app.history, &app.board) {
-		app.selection = {}
+		reset_selection(&app.selection)
 		return
 	}
 
